@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import cashlyLogo from '../assets/cashly-logo.png';
 
 const Login = () => {
   const { token, login } = useContext(AuthContext);
@@ -39,8 +40,16 @@ const Login = () => {
         {/* Left Side: Branding / Marketing */}
         <div className="hidden lg:flex flex-col justify-between w-1/2 p-16 bg-gradient-to-br from-indigo-600 to-purple-900 relative overflow-hidden">
           <div className="relative z-10">
-            <div className="inline-flex items-center gap-3 px-4 py-2 bg-white/10 rounded-full text-white font-bold uppercase tracking-widest backdrop-blur-md border border-white/10 shadow-inner mb-12">
-              <Sparkles size={16} /> Welcome to Cashly
+            <div className="flex items-center gap-3 mb-12">
+              <img
+                src={cashlyLogo}
+                alt="CASHLY Logo"
+                className="h-14 w-14 object-contain rounded-2xl shadow-lg shadow-black/30"
+              />
+              <div>
+                <p className="text-white font-black text-2xl tracking-tight leading-none">CASHLY</p>
+                <p className="text-indigo-200 font-semibold text-xs tracking-widest uppercase mt-0.5">Smart Expense Analyzer</p>
+              </div>
             </div>
             <h1 className="text-5xl font-black text-white tracking-tight leading-tight mb-6">
               Smarter tools for your financial future.
@@ -66,6 +75,14 @@ const Login = () => {
         <div className="w-full lg:w-1/2 p-8 sm:p-16 flex flex-col justify-center bg-white relative">
           <div className="max-w-md w-full mx-auto">
             <div className="mb-10 text-center lg:text-left">
+              <div className="flex items-center justify-center lg:justify-start gap-3 mb-6">
+                <img
+                  src={cashlyLogo}
+                  alt="CASHLY Logo"
+                  className="h-11 w-11 object-contain rounded-xl"
+                />
+                <span className="text-2xl font-black text-slate-800 tracking-tight">CASHLY</span>
+              </div>
               <h2 className="text-4xl font-black text-slate-800 tracking-tight mb-3">Sign In</h2>
               <p className="text-slate-500 font-medium">Welcome back! Please enter your details.</p>
             </div>

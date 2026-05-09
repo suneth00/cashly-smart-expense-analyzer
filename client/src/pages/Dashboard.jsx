@@ -44,7 +44,7 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <div className="bg-rose-50 text-rose-600 p-6 rounded-2xl text-center font-semibold border border-rose-100">
+      <div className="bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 p-6 rounded-2xl text-center font-semibold border border-rose-100 dark:border-rose-800/50">
         {error}
       </div>
     );
@@ -58,7 +58,7 @@ const Dashboard = () => {
       {/* ── Hero Section ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* Welcome card — takes 2/3 width on desktop */}
+        {/* Welcome card */}
         <div className="lg:col-span-2 bg-indigo-600 rounded-2xl p-6 md:p-8 relative overflow-hidden text-white shadow-lg shadow-indigo-600/20">
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/15 rounded-full text-xs font-bold uppercase tracking-widest mb-4 border border-white/10">
@@ -85,12 +85,11 @@ const Dashboard = () => {
               </Link>
             </div>
           </div>
-          {/* Decorative blobs */}
           <div className="absolute -right-16 -top-16 w-56 h-56 bg-indigo-400 rounded-full mix-blend-screen blur-3xl opacity-60 pointer-events-none" />
           <div className="absolute right-8 -bottom-16 w-44 h-44 bg-purple-500 rounded-full mix-blend-screen blur-3xl opacity-40 pointer-events-none" />
         </div>
 
-        {/* Savings Goal card — takes 1/3 width on desktop */}
+        {/* Savings Goal card */}
         <div className="lg:col-span-1 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl p-6 md:p-8 text-white shadow-lg shadow-emerald-500/20 relative overflow-hidden flex flex-col justify-between">
           <div className="relative z-10">
             <p className="text-emerald-50 text-xs font-bold uppercase tracking-widest mb-2">Savings Goal</p>
@@ -112,7 +111,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* ── Stat Cards — 4 columns on xl ── */}
+      {/* ── Stat Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatCard
           title="Total Expenses"
@@ -159,7 +158,7 @@ const Dashboard = () => {
       {/* ── Charts + Recent Transactions ── */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-        {/* Charts — 2/3 width */}
+        {/* Charts */}
         <div className="xl:col-span-2 space-y-6">
           <ChartCard title="Daily Spending Trend" subtitle="Last 30 days">
             {data.dailySpendingTrend.length > 0 ? (
@@ -237,47 +236,47 @@ const Dashboard = () => {
           </ChartCard>
         </div>
 
-        {/* Recent Transactions — 1/3 width */}
+        {/* Recent Transactions */}
         <div className="xl:col-span-1">
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm h-full flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+          <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm h-full flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-700/50 shrink-0">
               <div>
-                <h3 className="font-bold text-slate-800">Recent Activity</h3>
-                <p className="text-xs text-slate-400 font-medium mt-0.5">Latest transactions</p>
+                <h3 className="font-bold text-slate-800 dark:text-slate-100">Recent Activity</h3>
+                <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">Latest transactions</p>
               </div>
               <Link
                 to="/expenses"
-                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors"
+                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
               >
                 View All <ArrowRight size={13} />
               </Link>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-50">
+            <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-50 dark:divide-slate-700/30">
               {data.recentTransactions.length > 0 ? (
                 data.recentTransactions.map((tx) => (
-                  <div key={tx._id} className="flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors group">
+                  <div key={tx._id} className="flex items-center justify-between px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center font-black text-sm border border-slate-200/60 group-hover:bg-indigo-100 group-hover:text-indigo-600 group-hover:border-indigo-200 transition-colors shrink-0">
+                      <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center font-black text-sm border border-slate-200/60 dark:border-slate-600/50 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:border-indigo-200 dark:group-hover:border-indigo-800/50 transition-colors shrink-0">
                         {tx.category.charAt(0)}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-bold text-slate-800 text-sm truncate">{tx.title}</p>
-                        <p className="text-xs text-slate-400 font-medium mt-0.5">
+                        <p className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate">{tx.title}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
                           {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {tx.category}
                         </p>
                       </div>
                     </div>
-                    <p className="font-black text-slate-800 text-sm shrink-0 ml-3">-${tx.amount.toFixed(2)}</p>
+                    <p className="font-black text-slate-800 dark:text-slate-100 text-sm shrink-0 ml-3">-${tx.amount.toFixed(2)}</p>
                   </div>
                 ))
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                  <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
-                    <Wallet size={24} className="text-slate-300" />
+                  <div className="w-14 h-14 bg-slate-50 dark:bg-slate-700/50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100 dark:border-slate-600/50">
+                    <Wallet size={24} className="text-slate-300 dark:text-slate-500" />
                   </div>
-                  <p className="font-bold text-slate-600 mb-1">No transactions yet</p>
-                  <p className="text-sm text-slate-400 mb-5">Add your first expense to start tracking.</p>
+                  <p className="font-bold text-slate-600 dark:text-slate-400 mb-1">No transactions yet</p>
+                  <p className="text-sm text-slate-400 dark:text-slate-500 mb-5">Add your first expense to start tracking.</p>
                   <Link to="/add-expense" className="bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-indigo-500/20 hover:bg-indigo-700 transition-colors">
                     Add Expense
                   </Link>
@@ -293,11 +292,11 @@ const Dashboard = () => {
 
 /** Shared empty state for charts */
 const EmptyChart = ({ icon, label }) => (
-  <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 m-2 p-8">
-    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mb-3 shadow-sm border border-slate-100">
+  <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 m-2 p-8">
+    <div className="w-14 h-14 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-3 shadow-sm border border-slate-100 dark:border-slate-700">
       {icon}
     </div>
-    <p className="font-bold text-slate-500 mb-1">{label}</p>
+    <p className="font-bold text-slate-500 dark:text-slate-400 mb-1">{label}</p>
     <p className="text-sm">Add expenses to see your chart.</p>
   </div>
 );

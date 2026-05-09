@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Receipt, PlusCircle, BarChart3, Scan, User, LogOut, X } from 'lucide-react';
-import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import cashlyLogo from '../assets/cashly-logo.png';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const { logout } = useContext(AuthContext);
@@ -22,22 +22,25 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       <aside
         className={`
           fixed inset-y-0 left-0 z-40 w-[260px] flex flex-col
-          bg-white border-r border-slate-100 shadow-xl md:shadow-none
-          transition-transform duration-300 ease-in-out
+          bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800
+          shadow-xl md:shadow-none
+          transition-all duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
           md:relative md:translate-x-0 md:flex md:shrink-0
         `}
       >
         {/* Logo */}
-        <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100 shrink-0">
+        <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center text-white font-black text-base shadow-lg shadow-indigo-500/30">
-              C
-            </div>
-            <span className="text-xl font-black tracking-tight text-slate-800">CASHLY</span>
+            <img
+              src={cashlyLogo}
+              alt="CASHLY Logo"
+              className="h-10 w-10 object-contain rounded-xl"
+            />
+            <span className="text-xl font-black tracking-tight text-slate-800 dark:text-slate-100">CASHLY</span>
           </div>
           <button
-            className="md:hidden text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-1.5 rounded-full transition-colors"
+            className="md:hidden text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 p-1.5 rounded-full transition-colors"
             onClick={() => setIsOpen(false)}
           >
             <X size={18} />
@@ -55,13 +58,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150 font-medium text-sm ${
                   isActive
                     ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <span className={isActive ? 'text-white' : 'text-slate-400'}>{item.icon}</span>
+                  <span className={isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500'}>{item.icon}</span>
                   <span>{item.name}</span>
                 </>
               )}
@@ -70,12 +73,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         </nav>
 
         {/* Logout */}
-        <div className="px-3 py-4 border-t border-slate-100 shrink-0">
+        <div className="px-3 py-4 border-t border-slate-100 dark:border-slate-800 shrink-0">
           <button
             onClick={logout}
-            className="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-rose-600 hover:bg-rose-50 font-medium text-sm rounded-xl transition-all w-full group"
+            className="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 font-medium text-sm rounded-xl transition-all w-full group"
           >
-            <LogOut size={20} className="text-slate-400 group-hover:text-rose-500 transition-colors" />
+            <LogOut size={20} className="text-slate-400 dark:text-slate-500 group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-colors" />
             <span>Logout</span>
           </button>
         </div>

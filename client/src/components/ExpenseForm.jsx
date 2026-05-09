@@ -4,7 +4,7 @@ import axios from '../api/axios';
 
 const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
   const isEditing = !!initialData && !!initialData._id;
-  
+
   const [formData, setFormData] = useState({
     title: '',
     amount: '',
@@ -13,7 +13,7 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
     date: new Date().toISOString().split('T')[0],
     notes: ''
   });
-  
+
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -44,7 +44,7 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
   const [error, setError] = useState('');
 
   const categories = [
-    'Food', 'Transport', 'Education', 'Shopping', 
+    'Food', 'Transport', 'Education', 'Shopping',
     'Bills', 'Entertainment', 'Health', 'Other'
   ];
 
@@ -82,7 +82,7 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
           notes: ''
         });
       }
-      
+
       if (onSuccess) {
         setTimeout(() => onSuccess(), 1000);
       } else {
@@ -95,17 +95,19 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
     }
   };
 
+  const inputClass = "w-full px-5 py-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-700 dark:text-slate-200 font-semibold bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 placeholder-slate-400 dark:placeholder-slate-600 shadow-inner";
+
   return (
-    <div className={`bg-white rounded-3xl ${!isEditing ? 'shadow-sm border border-slate-100 p-8 md:p-10' : 'p-6'}`}>
+    <div className={`bg-white dark:bg-slate-800/60 rounded-3xl ${!isEditing ? 'shadow-sm border border-slate-100 dark:border-slate-700/50 p-8 md:p-10' : 'p-6'}`}>
       {success && (
-        <div className="mb-8 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm">
+        <div className="mb-8 p-4 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-400 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm">
           <CheckCircle2 size={20} className="text-emerald-500" />
           <span>{success}</span>
         </div>
       )}
 
       {error && (
-        <div className="mb-8 p-4 bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm">
+        <div className="mb-8 p-4 bg-rose-50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-800/50 text-rose-700 dark:text-rose-400 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm">
           <AlertCircle size={20} className="text-rose-500" />
           <span>{error}</span>
         </div>
@@ -114,39 +116,39 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
           <div className="col-span-1 md:col-span-2 group">
-            <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-indigo-600 transition-colors">Expense Title *</label>
-            <input 
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors">Expense Title *</label>
+            <input
               type="text" name="title" value={formData.title} onChange={handleChange} required
-              className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-700 font-semibold bg-slate-50 focus:bg-white shadow-inner" 
-              placeholder="e.g., Grocery Shopping at Whole Foods" 
+              className={inputClass}
+              placeholder="e.g., Grocery Shopping at Whole Foods"
             />
           </div>
 
           <div className="group">
-            <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-indigo-600 transition-colors">Amount ($) *</label>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors">Amount ($) *</label>
             <div className="relative">
-              <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
-              <input 
+              <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-bold">$</span>
+              <input
                 type="number" name="amount" value={formData.amount} onChange={handleChange} required step="0.01" min="0.01"
-                className="w-full pl-10 pr-5 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-700 font-black bg-slate-50 focus:bg-white shadow-inner tracking-wide" 
-                placeholder="0.00" 
+                className={`${inputClass} pl-10`}
+                placeholder="0.00"
               />
             </div>
           </div>
 
           <div className="group">
-            <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-indigo-600 transition-colors">Date *</label>
-            <input 
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors">Date *</label>
+            <input
               type="date" name="date" value={formData.date} onChange={handleChange} required
-              className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-700 font-semibold bg-slate-50 focus:bg-white shadow-inner" 
+              className={inputClass}
             />
           </div>
 
           <div className="group">
-            <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-indigo-600 transition-colors">Category *</label>
-            <select 
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors">Category *</label>
+            <select
               name="category" value={formData.category} onChange={handleChange} required
-              className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-700 font-semibold bg-slate-50 focus:bg-white appearance-none shadow-inner cursor-pointer" 
+              className={`${inputClass} appearance-none cursor-pointer`}
             >
               <option value="" disabled>Select a category</option>
               {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -154,10 +156,10 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
           </div>
 
           <div className="group">
-            <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-indigo-600 transition-colors">Payment Method *</label>
-            <select 
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors">Payment Method *</label>
+            <select
               name="paymentMethod" value={formData.paymentMethod} onChange={handleChange} required
-              className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-700 font-semibold bg-slate-50 focus:bg-white appearance-none shadow-inner cursor-pointer" 
+              className={`${inputClass} appearance-none cursor-pointer`}
             >
               <option value="" disabled>Select payment method</option>
               {paymentMethods.map(method => <option key={method} value={method}>{method}</option>)}
@@ -165,18 +167,18 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
           </div>
 
           <div className="col-span-1 md:col-span-2 group">
-            <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-indigo-600 transition-colors">Notes (Optional)</label>
-            <textarea 
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors">Notes (Optional)</label>
+            <textarea
               name="notes" value={formData.notes} onChange={handleChange} rows="3"
-              className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-700 font-semibold bg-slate-50 focus:bg-white resize-none shadow-inner" 
-              placeholder="Add any extra details here..." 
+              className={`${inputClass} resize-none`}
+              placeholder="Add any extra details here..."
             ></textarea>
           </div>
         </div>
 
-        <div className="pt-6 border-t border-slate-100 flex justify-end">
-          <button 
-            type="submit" 
+        <div className="pt-6 border-t border-slate-100 dark:border-slate-700/50 flex justify-end">
+          <button
+            type="submit"
             disabled={loading}
             className="w-full md:w-auto px-10 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/30 transition-all duration-300 flex items-center justify-center min-w-[200px] hover:-translate-y-0.5"
           >
