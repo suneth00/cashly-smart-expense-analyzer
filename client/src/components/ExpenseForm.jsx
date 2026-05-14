@@ -43,11 +43,7 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
-  const categories = [
-    'Food', 'Transport', 'Education', 'Shopping',
-    'Bills', 'Entertainment', 'Health', 'Other'
-  ];
-
+  const categories = ['Food', 'Transport', 'Education', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other'];
   const paymentMethods = ['Cash', 'Credit Card', 'Debit Card', 'Bank Transfer', 'UPI', 'Other'];
 
   const handleChange = (e) => {
@@ -74,12 +70,8 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
         await axios.post('/expenses', formData);
         setSuccess('Expense added successfully!');
         setFormData({
-          title: '',
-          amount: '',
-          category: '',
-          paymentMethod: '',
-          date: new Date().toISOString().split('T')[0],
-          notes: ''
+          title: '', amount: '', category: '', paymentMethod: '',
+          date: new Date().toISOString().split('T')[0], notes: ''
         });
       }
 
@@ -95,92 +87,137 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
     }
   };
 
-  const inputClass = "w-full px-5 py-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-700 dark:text-slate-200 font-semibold bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 placeholder-slate-400 dark:placeholder-slate-600 shadow-inner";
+  const inputStyle = {
+    width: '100%',
+    padding: '14px 20px',
+    borderRadius: '14px',
+    border: '1.5px solid #d1fae5',
+    background: 'var(--bg-subtle)',
+    color: 'var(--text-primary)',
+    fontWeight: 600,
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'all 0.2s',
+  };
+
+  const labelStyle = {
+    display: 'block',
+    fontSize: '13px',
+    fontWeight: 700,
+    marginBottom: '8px',
+    color: 'var(--text-secondary)',
+  };
+
+  const wrapperStyle = isEditing ? { padding: '8px' } : {
+    background: '#ffffff',
+    border: '1px solid #d1fae5',
+    borderRadius: '22px',
+    boxShadow: '0 1px 6px rgba(13,148,136,0.07)',
+    padding: '32px 32px',
+  };
 
   return (
-    <div className={`bg-white dark:bg-slate-800/60 rounded-3xl ${!isEditing ? 'shadow-sm border border-slate-100 dark:border-slate-700/50 p-8 md:p-10' : 'p-6'}`}>
+    <div style={wrapperStyle}>
       {success && (
-        <div className="mb-8 p-4 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-400 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm">
-          <CheckCircle2 size={20} className="text-emerald-500" />
+        <div
+          className="mb-6 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold"
+          style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#15803d' }}
+        >
+          <CheckCircle2 size={18} style={{ color: '#22c55e' }} />
           <span>{success}</span>
         </div>
       )}
-
       {error && (
-        <div className="mb-8 p-4 bg-rose-50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-800/50 text-rose-700 dark:text-rose-400 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm">
-          <AlertCircle size={20} className="text-rose-500" />
+        <div
+          className="mb-6 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold"
+          style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#dc2626' }}
+        >
+          <AlertCircle size={18} />
           <span>{error}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-          <div className="col-span-1 md:col-span-2 group">
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors">Expense Title *</label>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Title */}
+          <div className="col-span-1 md:col-span-2">
+            <label style={labelStyle}>Expense Title *</label>
             <input
               type="text" name="title" value={formData.title} onChange={handleChange} required
-              className={inputClass}
+              style={inputStyle} className="input-teal"
               placeholder="e.g., Grocery Shopping at Whole Foods"
             />
           </div>
 
-          <div className="group">
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors">Amount ($) *</label>
+          {/* Amount */}
+          <div>
+            <label style={labelStyle}>Amount ($) *</label>
             <div className="relative">
-              <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-bold">$</span>
+              <span className="absolute left-5 top-1/2 -translate-y-1/2 font-bold" style={{ color: 'var(--teal-500)' }}>$</span>
               <input
-                type="number" name="amount" value={formData.amount} onChange={handleChange} required step="0.01" min="0.01"
-                className={`${inputClass} pl-10`}
+                type="number" name="amount" value={formData.amount} onChange={handleChange}
+                required step="0.01" min="0.01"
+                style={{ ...inputStyle, paddingLeft: '36px' }} className="input-teal"
                 placeholder="0.00"
               />
             </div>
           </div>
 
-          <div className="group">
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors">Date *</label>
+          {/* Date */}
+          <div>
+            <label style={labelStyle}>Date *</label>
             <input
               type="date" name="date" value={formData.date} onChange={handleChange} required
-              className={inputClass}
+              style={inputStyle} className="input-teal"
             />
           </div>
 
-          <div className="group">
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors">Category *</label>
+          {/* Category */}
+          <div>
+            <label style={labelStyle}>Category *</label>
             <select
               name="category" value={formData.category} onChange={handleChange} required
-              className={`${inputClass} appearance-none cursor-pointer`}
+              style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }} className="input-teal"
             >
               <option value="" disabled>Select a category</option>
               {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
             </select>
           </div>
 
-          <div className="group">
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors">Payment Method *</label>
+          {/* Payment Method */}
+          <div>
+            <label style={labelStyle}>Payment Method *</label>
             <select
               name="paymentMethod" value={formData.paymentMethod} onChange={handleChange} required
-              className={`${inputClass} appearance-none cursor-pointer`}
+              style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }} className="input-teal"
             >
               <option value="" disabled>Select payment method</option>
               {paymentMethods.map(method => <option key={method} value={method}>{method}</option>)}
             </select>
           </div>
 
-          <div className="col-span-1 md:col-span-2 group">
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors">Notes (Optional)</label>
+          {/* Notes */}
+          <div className="col-span-1 md:col-span-2">
+            <label style={labelStyle}>Notes (Optional)</label>
             <textarea
               name="notes" value={formData.notes} onChange={handleChange} rows="3"
-              className={`${inputClass} resize-none`}
+              style={{ ...inputStyle, resize: 'none' }} className="input-teal"
               placeholder="Add any extra details here..."
-            ></textarea>
+            />
           </div>
         </div>
 
-        <div className="pt-6 border-t border-slate-100 dark:border-slate-700/50 flex justify-end">
+        <div className="pt-5 flex justify-end" style={{ borderTop: '1px solid #d1fae5' }}>
           <button
             type="submit"
             disabled={loading}
-            className="w-full md:w-auto px-10 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/30 transition-all duration-300 flex items-center justify-center min-w-[200px] hover:-translate-y-0.5"
+            className="btn-teal px-10 py-4 flex items-center justify-center min-w-[200px] text-sm w-full md:w-auto"
+            style={{
+              borderRadius: '14px',
+              fontSize: '15px',
+              opacity: loading ? 0.72 : 1,
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
           >
             {loading ? <Loader2 size={22} className="animate-spin" /> : isEditing ? 'Save Changes' : 'Save Expense'}
           </button>

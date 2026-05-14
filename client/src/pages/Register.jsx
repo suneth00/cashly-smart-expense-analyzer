@@ -1,12 +1,12 @@
 import React, { useState, useContext } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { AlertCircle, Loader2, Target, Sparkles, Leaf } from 'lucide-react';
 import cashlyLogo from '../assets/cashly-logo.png';
 
 const Register = () => {
   const { token, register } = useContext(AuthContext);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -14,7 +14,7 @@ const Register = () => {
     monthlyIncome: '',
     savingsGoal: ''
   });
-  
+
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -30,7 +30,6 @@ const Register = () => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-
     try {
       await register({
         ...formData,
@@ -44,122 +43,180 @@ const Register = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center font-sans bg-slate-900 relative overflow-hidden py-10">
-      {/* Decorative Background */}
-      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600 rounded-full mix-blend-screen filter blur-[150px] opacity-30 pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-500 rounded-full mix-blend-screen filter blur-[150px] opacity-20 pointer-events-none"></div>
+  const inputStyle = {
+    width: '100%',
+    padding: '14px 20px',
+    borderRadius: '14px',
+    border: '1.5px solid #d1fae5',
+    background: 'var(--bg-subtle)',
+    color: 'var(--text-primary)',
+    fontWeight: 600,
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'all 0.2s',
+  };
 
-      <div className="flex w-full max-w-6xl mx-auto z-10 bg-white/5 backdrop-blur-2xl rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden min-h-[750px] m-4">
-        
-        {/* Left Side: Branding */}
-        <div className="hidden lg:flex flex-col justify-between w-[45%] p-16 bg-gradient-to-br from-indigo-900 to-slate-900 relative overflow-hidden border-r border-white/10">
+  const labelStyle = {
+    display: 'block',
+    fontSize: '13px',
+    fontWeight: 700,
+    marginBottom: '8px',
+    color: 'var(--text-secondary)',
+  };
+
+  const features = [
+    { icon: <Target size={15} />, text: 'Set dynamic savings goals' },
+    { icon: <Sparkles size={15} />, text: 'Get AI-powered insights' },
+    { icon: <Leaf size={15} />, text: 'Scan receipts effortlessly' },
+  ];
+
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center font-sans relative overflow-hidden py-10"
+      style={{ background: 'var(--bg-main)' }}
+    >
+      {/* Subtle bg blobs */}
+      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full mix-blend-multiply filter blur-[150px] opacity-15 pointer-events-none" style={{ background: 'var(--teal-400)' }} />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full mix-blend-multiply filter blur-[150px] opacity-12 pointer-events-none" style={{ background: 'var(--lime-400)' }} />
+
+      <div
+        className="flex w-full max-w-6xl mx-auto z-10 overflow-hidden min-h-[750px] m-4"
+        style={{
+          background: '#ffffff',
+          borderRadius: '28px',
+          border: '1px solid #d1fae5',
+          boxShadow: '0 24px 80px rgba(13,148,136,0.14)',
+        }}
+      >
+        {/* Left: dark teal branding */}
+        <div
+          className="hidden lg:flex flex-col justify-between w-[42%] p-14 relative overflow-hidden"
+          style={{ background: 'linear-gradient(155deg, #0d2b2b 0%, #134e4a 55%, #0f766e 100%)' }}
+        >
+          <div className="absolute inset-0 pointer-events-none" style={{
+            backgroundImage: 'radial-gradient(circle at 75% 25%, rgba(45,212,191,0.10) 0%, transparent 50%), radial-gradient(circle at 25% 80%, rgba(163,230,53,0.07) 0%, transparent 50%)',
+          }} />
+
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-16">
-              <img
-                src={cashlyLogo}
-                alt="CASHLY Logo"
-                className="h-14 w-14 object-contain rounded-2xl shadow-lg shadow-black/30"
-              />
+              <img src={cashlyLogo} alt="CASHLY Logo" className="h-12 w-12 object-contain rounded-2xl" style={{ boxShadow: '0 8px 20px rgba(0,0,0,0.30)' }} />
               <div>
                 <p className="text-white font-black text-2xl tracking-tight leading-none">CASHLY</p>
-                <p className="text-indigo-200 font-semibold text-xs tracking-widest uppercase mt-0.5">Smart Expense Analyzer</p>
+                <p className="font-semibold text-xs tracking-widest uppercase mt-0.5" style={{ color: '#4d8a85' }}>Smart Expense Analyzer</p>
               </div>
             </div>
-            
-            <h2 className="text-4xl font-black text-white leading-tight mb-6">
+
+            <h2 className="text-4xl font-black text-white leading-tight mb-5">
               Start your journey to financial freedom.
             </h2>
-            <ul className="space-y-4 text-indigo-100 font-medium">
-              <li className="flex items-center gap-3"><CheckCircleIcon /> Set dynamic savings goals</li>
-              <li className="flex items-center gap-3"><CheckCircleIcon /> Get AI-powered insights</li>
-              <li className="flex items-center gap-3"><CheckCircleIcon /> Scan receipts effortlessly</li>
+            <p className="font-medium mb-10 leading-relaxed" style={{ color: '#99f6e4', fontSize: '15px' }}>
+              Set up your profile in seconds and start gaining clarity on your spending.
+            </p>
+
+            <ul className="space-y-4">
+              {features.map((f, i) => (
+                <li key={i} className="flex items-center gap-3">
+                  <div className="p-1.5 rounded-lg" style={{ background: 'rgba(45,212,191,0.18)', color: '#2dd4bf' }}>
+                    {f.icon}
+                  </div>
+                  <span className="text-sm font-semibold" style={{ color: '#ccfbf1' }}>{f.text}</span>
+                </li>
+              ))}
             </ul>
           </div>
-          
-          {/* Decorative shapes */}
-          <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-indigo-600 opacity-20 rounded-full blur-3xl"></div>
+
+          {/* Lime accent strip */}
+          <div className="relative z-10 flex gap-1 mt-8">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-1 flex-1 rounded-full" style={{ background: i < 4 ? 'var(--lime-400)' : 'rgba(163,230,53,0.2)' }} />
+            ))}
+          </div>
         </div>
 
-        {/* Right Side: Form */}
-        <div className="w-full lg:w-[55%] p-8 sm:p-12 md:p-16 flex flex-col justify-center bg-white relative">
+        {/* Right: form */}
+        <div className="w-full lg:w-[58%] p-8 sm:p-12 lg:p-14 flex flex-col justify-center" style={{ background: '#ffffff' }}>
           <div className="max-w-md w-full mx-auto">
-            <div className="mb-10 text-center lg:text-left">
-              <div className="flex items-center justify-center lg:justify-start gap-3 mb-6">
-                <img
-                  src={cashlyLogo}
-                  alt="CASHLY Logo"
-                  className="h-11 w-11 object-contain rounded-xl"
-                />
-                <span className="text-2xl font-black text-slate-800 tracking-tight">CASHLY</span>
-              </div>
-              <h2 className="text-4xl font-black text-slate-800 tracking-tight mb-3">Create Account</h2>
-              <p className="text-slate-500 font-medium">Enter your details to get started.</p>
+            {/* Mobile logo */}
+            <div className="flex items-center justify-center lg:justify-start gap-3 mb-8 lg:hidden">
+              <img src={cashlyLogo} alt="CASHLY Logo" className="h-10 w-10 object-contain rounded-xl" />
+              <span className="text-xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>CASHLY</span>
             </div>
-            
+
+            <div className="mb-10">
+              <h2 className="text-4xl font-black tracking-tight mb-2" style={{ color: 'var(--text-primary)' }}>Create Account</h2>
+              <p className="font-medium" style={{ color: 'var(--text-muted)' }}>Enter your details to get started.</p>
+            </div>
+
             {error && (
-              <div className="mb-6 p-4 bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm">
-                <AlertCircle size={20} />
-                <span>{error}</span>
+              <div
+                className="mb-6 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold"
+                style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#dc2626' }}
+              >
+                <AlertCircle size={18} /> <span>{error}</span>
               </div>
             )}
-            
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="group">
-                <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-indigo-600 transition-colors">Full Name</label>
-                <input 
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label style={labelStyle}>Full Name</label>
+                <input
                   type="text" name="name" value={formData.name} onChange={handleChange} required
-                  className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 bg-slate-50 focus:bg-white shadow-inner" 
-                  placeholder="John Doe" 
+                  style={inputStyle} placeholder="John Doe" className="input-teal"
                 />
               </div>
-              <div className="group">
-                <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-indigo-600 transition-colors">Email Address</label>
-                <input 
+              <div>
+                <label style={labelStyle}>Email Address</label>
+                <input
                   type="email" name="email" value={formData.email} onChange={handleChange} required
-                  className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 bg-slate-50 focus:bg-white shadow-inner" 
-                  placeholder="you@example.com" 
+                  style={inputStyle} placeholder="you@example.com" className="input-teal"
                 />
               </div>
-              <div className="group">
-                <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-indigo-600 transition-colors">Password</label>
-                <input 
+              <div>
+                <label style={labelStyle}>Password</label>
+                <input
                   type="password" name="password" value={formData.password} onChange={handleChange} required minLength="6"
-                  className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 bg-slate-50 focus:bg-white shadow-inner" 
-                  placeholder="••••••••" 
+                  style={inputStyle} placeholder="••••••••" className="input-teal"
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
-                <div className="group">
-                  <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-indigo-600 transition-colors">Monthly Income</label>
-                  <input 
+                <div>
+                  <label style={labelStyle}>Monthly Income</label>
+                  <input
                     type="number" name="monthlyIncome" value={formData.monthlyIncome} onChange={handleChange}
-                    className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 bg-slate-50 focus:bg-white shadow-inner" 
-                    placeholder="$0" 
+                    style={inputStyle} placeholder="$0" className="input-teal"
                   />
                 </div>
-                <div className="group">
-                  <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-indigo-600 transition-colors">Savings Goal</label>
-                  <input 
+                <div>
+                  <label style={labelStyle}>Savings Goal</label>
+                  <input
                     type="number" name="savingsGoal" value={formData.savingsGoal} onChange={handleChange}
-                    className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 bg-slate-50 focus:bg-white shadow-inner" 
-                    placeholder="$0" 
+                    style={inputStyle} placeholder="$0" className="input-teal"
                   />
                 </div>
               </div>
-              
-              <button 
-                type="submit" 
+
+              <button
+                type="submit"
                 disabled={isLoading}
-                className="w-full py-4 mt-6 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-xl shadow-indigo-500/30 transition-all duration-300 flex justify-center items-center hover:-translate-y-0.5"
+                className="btn-teal w-full py-4 mt-3 flex justify-center items-center text-sm"
+                style={{
+                  borderRadius: '16px',
+                  fontSize: '15px',
+                  marginTop: '12px',
+                  opacity: isLoading ? 0.72 : 1,
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                }}
               >
-                {isLoading ? <Loader2 size={24} className="animate-spin" /> : 'Create Account'}
+                {isLoading ? <Loader2 size={22} className="animate-spin" /> : 'Create Account →'}
               </button>
             </form>
-            
-            <p className="mt-8 text-center text-slate-600 font-medium">
-              Already have an account? <Link to="/login" className="text-indigo-600 font-black hover:text-indigo-700 transition-colors hover:underline">Sign in here</Link>
+
+            <p className="mt-8 text-center font-medium" style={{ color: 'var(--text-muted)' }}>
+              Already have an account?{' '}
+              <Link to="/login" className="font-black hover:underline" style={{ color: 'var(--teal-600)' }}>
+                Sign in here
+              </Link>
             </p>
           </div>
         </div>
@@ -167,9 +224,5 @@ const Register = () => {
     </div>
   );
 };
-
-const CheckCircleIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-);
 
 export default Register;

@@ -21,64 +21,74 @@ const MoneyHealthCard = () => {
     fetchHealth();
   }, []);
 
+  const cardStyle = {
+    background: 'var(--bg-card)',
+    border: '1px solid',
+    borderColor: 'var(--border-card, #d1fae5)',
+    borderRadius: '22px',
+    boxShadow: '0 1px 6px rgba(13,148,136,0.07)',
+    padding: '28px 24px',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    transition: 'background 0.3s ease, border-color 0.3s ease',
+  };
+
   if (loading) {
     return (
-      <div className="bg-white dark:bg-slate-800/60 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700/50 flex items-center justify-center h-full min-h-[400px]">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-indigo-600"></div>
+      <div style={cardStyle} className="items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-4" style={{ borderColor: 'var(--teal-600)' }} />
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="bg-white dark:bg-slate-800/60 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700/50 flex items-center justify-center h-full min-h-[400px] text-slate-500 dark:text-slate-400 font-bold">
-        {error || 'No data available'}
+      <div style={cardStyle} className="items-center justify-center min-h-[400px]">
+        <span className="font-bold" style={{ color: 'var(--text-muted)' }}>{error || 'No data available'}</span>
       </div>
     );
   }
 
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'Excellent': return 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800';
-      case 'Good': return 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800';
-      case 'Needs Improvement': return 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800';
-      case 'Risky': return 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-800';
-      default: return 'text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700';
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case 'Excellent':        return { color: '#065f46', bg: '#dcfce7', border: '#86efac', stroke: '#22c55e' };
+      case 'Good':             return { color: 'var(--teal-700)', bg: '#ccfbf1', border: '#5eead4', stroke: 'var(--teal-500)' };
+      case 'Needs Improvement':return { color: '#92400e', bg: '#fef3c7', border: '#fcd34d', stroke: '#f59e0b' };
+      case 'Risky':            return { color: '#991b1b', bg: '#fee2e2', border: '#fca5a5', stroke: '#ef4444' };
+      default:                 return { color: 'var(--text-muted)', bg: '#f9fafb', border: '#e5e7eb', stroke: '#9ca3af' };
     }
   };
 
-  const getStatusTextColor = (status) => {
-    switch(status) {
-      case 'Excellent': return 'text-emerald-500';
-      case 'Good': return 'text-indigo-500';
-      case 'Needs Improvement': return 'text-amber-500';
-      case 'Risky': return 'text-rose-500';
-      default: return 'text-slate-500';
-    }
-  };
+  const s = getStatusStyle(data.status);
 
   return (
-    <div className="bg-white dark:bg-slate-800/60 rounded-3xl p-6 lg:p-8 shadow-sm shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700/50 h-full flex flex-col transition-all duration-300 hover:shadow-md relative overflow-hidden group">
+    <div style={cardStyle} className="relative overflow-hidden group">
+      {/* Header */}
       <div className="flex items-center justify-between mb-8 relative z-10">
-        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3">
-          <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-2xl shadow-inner">
-            <Activity size={24} />
+        <h3 className="text-xl font-bold flex items-center gap-3" style={{ color: 'var(--text-primary)' }}>
+          <div className="p-2.5 rounded-2xl" style={{ background: '#ccfbf1', color: 'var(--teal-600)' }}>
+            <Activity size={22} />
           </div>
           Health Score
         </h3>
-        <span className={`px-4 py-1.5 rounded-full text-xs font-bold border ${getStatusColor(data.status)} uppercase tracking-widest shadow-sm`}>
+        <span
+          className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest"
+          style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}
+        >
           {data.status}
         </span>
       </div>
 
+      {/* Score Ring */}
       <div className="flex items-center justify-center mb-8 relative z-10">
-        <div className="relative flex items-center justify-center drop-shadow-lg group-hover:scale-105 transition-transform duration-500">
+        <div className="relative flex items-center justify-center group-hover:scale-105 transition-transform duration-500 drop-shadow-md">
           <svg className="w-48 h-48 transform -rotate-90">
-            <circle cx="96" cy="96" r="84" className="text-slate-100 dark:text-slate-700" strokeWidth="16" fill="none" stroke="currentColor" />
+            <circle cx="96" cy="96" r="84" strokeWidth="14" fill="none" stroke="var(--bg-subtle)" />
             <circle
               cx="96" cy="96" r="84"
-              className={getStatusTextColor(data.status)}
-              strokeWidth="16" fill="none" stroke="currentColor"
+              strokeWidth="14" fill="none"
+              stroke={s.stroke}
               strokeDasharray="527.7"
               strokeDashoffset={527.7 - (527.7 * data.score) / 100}
               strokeLinecap="round"
@@ -86,25 +96,32 @@ const MoneyHealthCard = () => {
             />
           </svg>
           <div className="absolute flex flex-col items-center justify-center">
-            <span className={`text-6xl font-black ${getStatusTextColor(data.status)} tracking-tighter`}>{data.score}</span>
-            <span className="text-xs text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest mt-1">/ 100</span>
+            <span className="text-6xl font-black tracking-tighter" style={{ color: s.stroke }}>{data.score}</span>
+            <span className="text-xs font-black uppercase tracking-widest mt-1" style={{ color: 'var(--text-faint)' }}>/ 100</span>
           </div>
         </div>
       </div>
 
-      <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 text-center leading-relaxed font-semibold px-2 relative z-10">
+      {/* Explanation */}
+      <p className="text-sm font-semibold mb-8 text-center leading-relaxed px-2 relative z-10" style={{ color: 'var(--text-muted)' }}>
         {data.explanation}
       </p>
 
-      <div className="flex-1 bg-slate-50 dark:bg-slate-900/50 rounded-3xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-inner relative z-10">
-        <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 mb-4 uppercase tracking-widest">Score Breakdown</h4>
-        <ul className="space-y-4">
+      {/* Breakdown */}
+      <div
+        className="flex-1 rounded-2xl p-5 relative z-10"
+        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-card, #d1fae5)' }}
+      >
+        <h4 className="text-xs font-black uppercase tracking-widest mb-4" style={{ color: 'var(--text-faint)' }}>
+          Score Breakdown
+        </h4>
+        <ul className="space-y-3">
           {data.suggestions.map((sug, i) => (
-            <li key={i} className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300 font-medium">
+            <li key={i} className="flex items-start gap-3 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
               {data.status === 'Excellent' ? (
-                <CheckCircle className="text-emerald-500 shrink-0 mt-0.5" size={18} />
+                <CheckCircle size={17} className="shrink-0 mt-0.5" style={{ color: '#22c55e' }} />
               ) : (
-                <Info className="text-indigo-500 shrink-0 mt-0.5" size={18} />
+                <Info size={17} className="shrink-0 mt-0.5" style={{ color: 'var(--teal-500)' }} />
               )}
               <span className="leading-relaxed">{sug}</span>
             </li>
@@ -112,8 +129,11 @@ const MoneyHealthCard = () => {
         </ul>
       </div>
 
-      {/* Decorative Blob */}
-      <div className={`absolute -top-10 -right-10 w-40 h-40 rounded-full blur-3xl opacity-10 dark:opacity-5 pointer-events-none ${getStatusColor(data.status).split(' ')[0].replace('text', 'bg')}`}></div>
+      {/* Decorative corner blob */}
+      <div
+        className="absolute -top-10 -right-10 w-40 h-40 rounded-full blur-3xl opacity-10 pointer-events-none"
+        style={{ background: s.stroke }}
+      />
     </div>
   );
 };

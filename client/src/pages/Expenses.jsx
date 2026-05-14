@@ -42,60 +42,85 @@ const Expenses = () => {
   const handleEditSuccess = () => { setEditingExpense(null); fetchExpenses(); };
 
   let filtered = [...expenses];
-  if (search) filtered = filtered.filter(exp => exp.title.toLowerCase().includes(search.toLowerCase()));
+  if (search)   filtered = filtered.filter(exp => exp.title.toLowerCase().includes(search.toLowerCase()));
   if (category) filtered = filtered.filter(exp => exp.category === category);
   filtered.sort((a, b) => {
-    if (sort === 'newest') return new Date(b.date) - new Date(a.date);
-    if (sort === 'oldest') return new Date(a.date) - new Date(b.date);
+    if (sort === 'newest')  return new Date(b.date) - new Date(a.date);
+    if (sort === 'oldest')  return new Date(a.date) - new Date(b.date);
     if (sort === 'highest') return b.amount - a.amount;
-    if (sort === 'lowest') return a.amount - b.amount;
+    if (sort === 'lowest')  return a.amount - b.amount;
     return 0;
   });
 
   const categories = ['Food', 'Transport', 'Education', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other'];
-  const controlClass = "w-full pl-12 pr-5 py-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/60 focus:bg-white dark:focus:bg-slate-900 appearance-none transition-all font-semibold shadow-inner cursor-pointer placeholder-slate-400 dark:placeholder-slate-600";
+
+  const inputStyle = {
+    width: '100%',
+    paddingLeft: '48px',
+    paddingRight: '20px',
+    paddingTop: '14px',
+    paddingBottom: '14px',
+    borderRadius: '14px',
+    border: '1.5px solid #d1fae5',
+    background: 'var(--bg-subtle)',
+    color: 'var(--text-primary)',
+    fontSize: '14px',
+    fontWeight: 600,
+    outline: 'none',
+    appearance: 'none',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  };
 
   return (
     <div className="w-full pb-10">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
         <div>
-          <h1 className="text-4xl font-black text-slate-800 dark:text-slate-100 tracking-tight">All Expenses</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium text-lg">Manage and track your transaction history.</p>
+          <h1 className="text-4xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>All Expenses</h1>
+          <p className="mt-2 font-medium text-lg" style={{ color: 'var(--text-muted)' }}>
+            Manage and track your transaction history.
+          </p>
         </div>
         <Link
           to="/add-expense"
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-2xl font-bold transition-all shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5"
+          className="btn-teal flex items-center gap-2 px-6 py-3.5 text-sm"
         >
-          <Plus size={20} />
+          <Plus size={19} />
           <span>Add Expense</span>
         </Link>
       </div>
 
-      <div className="bg-white dark:bg-slate-800/60 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700/50 p-6 md:p-8 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Filter Bar */}
+      <div
+        className="rounded-2xl p-6 md:p-8 mb-8"
+        style={{ background: '#ffffff', border: '1px solid #d1fae5', boxShadow: '0 1px 6px rgba(13,148,136,0.07)' }}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Search */}
-          <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors" size={20} />
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2" size={18} style={{ color: 'var(--teal-500)' }} />
             <input
               type="text"
               placeholder="Search by title..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className={controlClass}
+              style={inputStyle}
+              className="input-teal"
             />
           </div>
           {/* Filter */}
-          <div className="relative group">
-            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors" size={20} />
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className={controlClass}>
+          <div className="relative">
+            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" size={18} style={{ color: 'var(--teal-500)' }} />
+            <select value={category} onChange={(e) => setCategory(e.target.value)} style={inputStyle} className="input-teal">
               <option value="">All Categories</option>
               {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           {/* Sort */}
-          <div className="relative group">
-            <ArrowUpDown className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors" size={20} />
-            <select value={sort} onChange={(e) => setSort(e.target.value)} className={controlClass}>
+          <div className="relative">
+            <ArrowUpDown className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" size={18} style={{ color: 'var(--teal-500)' }} />
+            <select value={sort} onChange={(e) => setSort(e.target.value)} style={inputStyle} className="input-teal">
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
               <option value="highest">Highest Amount</option>
@@ -107,19 +132,37 @@ const Expenses = () => {
 
       <ExpenseTable expenses={filtered} loading={loading} onEdit={handleEdit} onDelete={handleDelete} />
 
-      {/* Edit Modal Overlay */}
+      {/* Edit Modal */}
       {editingExpense && (
-        <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
-          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-3xl max-h-[90vh] overflow-y-auto relative shadow-2xl border border-white/20 dark:border-slate-700">
+        <div
+          className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(13,43,43,0.55)' }}
+        >
+          <div
+            className="w-full max-w-3xl max-h-[90vh] overflow-y-auto relative"
+            style={{
+              background: '#ffffff',
+              borderRadius: '28px',
+              border: '1px solid #d1fae5',
+              boxShadow: '0 32px 80px rgba(13,148,136,0.20)',
+            }}
+          >
             <button
               onClick={() => setEditingExpense(null)}
-              className="absolute top-8 right-8 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 w-10 h-10 flex items-center justify-center rounded-full transition-colors z-10 font-black text-xl"
+              className="absolute top-7 right-7 w-9 h-9 flex items-center justify-center rounded-full font-black text-lg transition-colors z-10"
+              style={{ background: '#ecfdf5', color: 'var(--teal-600)', border: '1px solid #d1fae5' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#ccfbf1'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#ecfdf5'; }}
             >
               ✕
             </button>
-            <div className="p-4">
-              <h2 className="text-3xl font-black text-slate-800 dark:text-slate-100 p-8 pb-2 tracking-tight">Edit Expense</h2>
-              <p className="px-8 text-slate-500 dark:text-slate-400 font-medium mb-4">Update the details of this transaction.</p>
+            <div className="p-6">
+              <h2 className="text-3xl font-black tracking-tight px-6 pt-4 pb-1" style={{ color: 'var(--text-primary)' }}>
+                Edit Expense
+              </h2>
+              <p className="px-6 font-medium mb-4" style={{ color: 'var(--text-muted)' }}>
+                Update the details of this transaction.
+              </p>
               <ExpenseForm initialData={editingExpense} onSuccess={handleEditSuccess} />
             </div>
           </div>

@@ -6,7 +6,7 @@ export const ThemeProvider = ({ children }) => {
   const [isDark, setIsDark] = useState(() => {
     const stored = localStorage.getItem('cashly_theme');
     if (stored) return stored === 'dark';
-    // Default to system preference
+    // Default: respect the OS preference
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 

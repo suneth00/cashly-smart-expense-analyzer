@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { AlertCircle, Loader2, Leaf, TrendingUp, ShieldCheck } from 'lucide-react';
 import cashlyLogo from '../assets/cashly-logo.png';
 
 const Login = () => {
@@ -19,7 +19,6 @@ const Login = () => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-
     try {
       await login(email, password);
     } catch (err) {
@@ -30,108 +29,166 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center font-sans bg-slate-900 relative overflow-hidden">
-      {/* Decorative Background */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600 rounded-full mix-blend-screen filter blur-[150px] opacity-30 pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-500 rounded-full mix-blend-screen filter blur-[150px] opacity-20 pointer-events-none"></div>
+    <div
+      className="min-h-screen flex items-center justify-center font-sans relative overflow-hidden"
+      style={{ background: 'var(--bg-main)' }}
+    >
+      {/* Subtle bg blobs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full mix-blend-multiply filter blur-[150px] opacity-20 pointer-events-none" style={{ background: 'var(--teal-400)' }} />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full mix-blend-multiply filter blur-[150px] opacity-15 pointer-events-none" style={{ background: 'var(--lime-400)' }} />
 
-      <div className="flex w-full max-w-6xl mx-auto z-10 bg-white/5 backdrop-blur-2xl rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden min-h-[700px] m-4">
-        
-        {/* Left Side: Branding / Marketing */}
-        <div className="hidden lg:flex flex-col justify-between w-1/2 p-16 bg-gradient-to-br from-indigo-600 to-purple-900 relative overflow-hidden">
+      <div
+        className="flex w-full max-w-6xl mx-auto z-10 overflow-hidden min-h-[700px] m-4"
+        style={{
+          background: '#ffffff',
+          borderRadius: '28px',
+          border: '1px solid #d1fae5',
+          boxShadow: '0 24px 80px rgba(13,148,136,0.14)',
+        }}
+      >
+        {/* Left: dark teal branding panel */}
+        <div
+          className="hidden lg:flex flex-col justify-between w-1/2 p-14 relative overflow-hidden"
+          style={{ background: 'linear-gradient(155deg, #0d2b2b 0%, #0d4f4f 50%, #0f766e 100%)' }}
+        >
+          {/* Decorative mesh */}
+          <div className="absolute inset-0 pointer-events-none" style={{
+            backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(45,212,191,0.12) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(163,230,53,0.08) 0%, transparent 50%)',
+          }} />
+
           <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-12">
-              <img
-                src={cashlyLogo}
-                alt="CASHLY Logo"
-                className="h-14 w-14 object-contain rounded-2xl shadow-lg shadow-black/30"
-              />
+            {/* Logo */}
+            <div className="flex items-center gap-3 mb-14">
+              <img src={cashlyLogo} alt="CASHLY Logo" className="h-12 w-12 object-contain rounded-2xl" style={{ boxShadow: '0 8px 20px rgba(0,0,0,0.30)' }} />
               <div>
                 <p className="text-white font-black text-2xl tracking-tight leading-none">CASHLY</p>
-                <p className="text-indigo-200 font-semibold text-xs tracking-widest uppercase mt-0.5">Smart Expense Analyzer</p>
+                <p className="font-semibold text-xs tracking-widest uppercase mt-0.5" style={{ color: '#4d8a85' }}>Smart Expense Analyzer</p>
               </div>
             </div>
-            <h1 className="text-5xl font-black text-white tracking-tight leading-tight mb-6">
-              Smarter tools for your financial future.
+
+            <h1 className="text-4xl font-black text-white tracking-tight leading-tight mb-5">
+              Smarter tools for<br />your financial future.
             </h1>
-            <p className="text-indigo-100 text-lg font-medium leading-relaxed max-w-md">
-              Join thousands of users tracking their expenses, building their savings, and taking control of their money effortlessly.
+            <p className="font-medium leading-relaxed max-w-sm" style={{ color: '#99f6e4', fontSize: '15px' }}>
+              Join thousands of students tracking their expenses, building savings, and taking control of their money.
             </p>
-          </div>
-          <div className="relative z-10 flex items-center gap-4">
-            <div className="flex -space-x-4">
-              {[1,2,3,4].map(i => (
-                <div key={i} className="w-12 h-12 rounded-full border-2 border-indigo-600 bg-slate-200 shadow-md"></div>
+
+            {/* Feature pills */}
+            <div className="flex flex-col gap-3 mt-10">
+              {[
+                { icon: <TrendingUp size={15} />, label: 'Real-time spending analytics' },
+                { icon: <ShieldCheck size={15} />, label: 'AI-powered financial insights' },
+                { icon: <Leaf size={15} />, label: 'Scan receipts instantly' },
+              ].map((f, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="p-1.5 rounded-lg" style={{ background: 'rgba(45,212,191,0.18)', color: '#2dd4bf' }}>
+                    {f.icon}
+                  </div>
+                  <span className="text-sm font-semibold" style={{ color: '#ccfbf1' }}>{f.label}</span>
+                </div>
               ))}
             </div>
-            <p className="text-indigo-100 font-medium text-sm">Join <span className="text-white font-bold">10,000+</span> users today.</p>
           </div>
-          {/* Decorative shapes */}
-          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-white opacity-5 rounded-full blur-3xl"></div>
-          <div className="absolute top-24 -left-24 w-64 h-64 bg-indigo-400 mix-blend-overlay rounded-full blur-2xl"></div>
+
+          {/* Social proof */}
+          <div className="relative z-10 flex items-center gap-4 mt-10">
+            <div className="flex -space-x-3">
+              {['#14b8a6', '#0d9488', '#2dd4bf', '#84cc16'].map((c, i) => (
+                <div key={i} className="w-10 h-10 rounded-full border-2 flex items-center justify-center text-white text-xs font-black" style={{ background: c, borderColor: '#0d2b2b' }}>
+                  {['A','B','C','D'][i]}
+                </div>
+              ))}
+            </div>
+            <p className="text-sm font-medium" style={{ color: '#4d8a85' }}>
+              Join <span className="text-white font-bold">10,000+</span> users today.
+            </p>
+          </div>
         </div>
 
-        {/* Right Side: Form */}
-        <div className="w-full lg:w-1/2 p-8 sm:p-16 flex flex-col justify-center bg-white relative">
+        {/* Right: form */}
+        <div className="w-full lg:w-1/2 p-8 sm:p-14 flex flex-col justify-center" style={{ background: '#ffffff' }}>
           <div className="max-w-md w-full mx-auto">
-            <div className="mb-10 text-center lg:text-left">
-              <div className="flex items-center justify-center lg:justify-start gap-3 mb-6">
-                <img
-                  src={cashlyLogo}
-                  alt="CASHLY Logo"
-                  className="h-11 w-11 object-contain rounded-xl"
-                />
-                <span className="text-2xl font-black text-slate-800 tracking-tight">CASHLY</span>
-              </div>
-              <h2 className="text-4xl font-black text-slate-800 tracking-tight mb-3">Sign In</h2>
-              <p className="text-slate-500 font-medium">Welcome back! Please enter your details.</p>
+            {/* Mobile logo */}
+            <div className="flex items-center justify-center lg:justify-start gap-3 mb-8 lg:hidden">
+              <img src={cashlyLogo} alt="CASHLY Logo" className="h-10 w-10 object-contain rounded-xl" />
+              <span className="text-xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>CASHLY</span>
             </div>
-            
+
+            <div className="mb-10">
+              <h2 className="text-4xl font-black tracking-tight mb-2" style={{ color: 'var(--text-primary)' }}>Sign In</h2>
+              <p className="font-medium" style={{ color: 'var(--text-muted)' }}>Welcome back! Please enter your details.</p>
+            </div>
+
             {error && (
-              <div className="mb-6 p-4 bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm">
-                <AlertCircle size={20} />
-                <span>{error}</span>
+              <div
+                className="mb-6 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold"
+                style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#dc2626' }}
+              >
+                <AlertCircle size={18} /> <span>{error}</span>
               </div>
             )}
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="group">
-                <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-indigo-600 transition-colors">Email Address</label>
-                <input 
-                  type="email" 
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>
+                  Email Address
+                </label>
+                <input
+                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 bg-slate-50 focus:bg-white shadow-inner" 
-                  placeholder="you@example.com" 
-                  required 
+                  className="w-full px-5 py-4 rounded-2xl text-sm font-semibold transition-all placeholder-gray-400 input-teal"
+                  style={{
+                    border: '1.5px solid #d1fae5',
+                    background: 'var(--bg-subtle)',
+                    color: 'var(--text-primary)',
+                    outline: 'none',
+                  }}
+                  placeholder="you@example.com"
+                  required
                 />
               </div>
-              <div className="group">
+              <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-bold text-slate-700 group-focus-within:text-indigo-600 transition-colors">Password</label>
-                  <a href="#" className="text-sm font-bold text-indigo-600 hover:text-indigo-700">Forgot password?</a>
+                  <label className="block text-sm font-bold" style={{ color: 'var(--text-secondary)' }}>Password</label>
+                  <a href="#" className="text-xs font-bold hover:underline" style={{ color: 'var(--teal-600)' }}>Forgot password?</a>
                 </div>
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-slate-800 font-semibold placeholder-slate-400 bg-slate-50 focus:bg-white shadow-inner" 
-                  placeholder="••••••••" 
-                  required 
+                  className="w-full px-5 py-4 rounded-2xl text-sm font-semibold transition-all placeholder-gray-400 input-teal"
+                  style={{
+                    border: '1.5px solid #d1fae5',
+                    background: 'var(--bg-subtle)',
+                    color: 'var(--text-primary)',
+                    outline: 'none',
+                  }}
+                  placeholder="••••••••"
+                  required
                 />
               </div>
-              
-              <button 
-                type="submit" 
+
+              <button
+                type="submit"
                 disabled={isLoading}
-                className="w-full py-4 mt-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-xl shadow-indigo-500/30 transition-all duration-300 flex justify-center items-center hover:-translate-y-0.5"
+                className="btn-teal w-full py-4 mt-2 flex justify-center items-center text-sm"
+                style={{
+                  borderRadius: '16px',
+                  fontSize: '15px',
+                  opacity: isLoading ? 0.72 : 1,
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                }}
               >
-                {isLoading ? <Loader2 size={24} className="animate-spin" /> : 'Sign In to Dashboard'}
+                {isLoading ? <Loader2 size={22} className="animate-spin" /> : 'Sign In to Dashboard →'}
               </button>
             </form>
-            
-            <p className="mt-10 text-center text-slate-600 font-medium">
-              Don't have an account? <Link to="/register" className="text-indigo-600 font-black hover:text-indigo-700 transition-colors hover:underline">Register here</Link>
+
+            <p className="mt-10 text-center font-medium" style={{ color: 'var(--text-muted)' }}>
+              Don't have an account?{' '}
+              <Link to="/register" className="font-black hover:underline" style={{ color: 'var(--teal-600)' }}>
+                Register here
+              </Link>
             </p>
           </div>
         </div>

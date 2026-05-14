@@ -1,24 +1,61 @@
 import React from 'react';
 
-const StatCard = ({ title, amount, icon, subtitle, trend, trendUp, colorClass }) => {
+const StatCard = ({ title, amount, icon, subtitle, trend, trendUp, accentColor }) => {
+  // accentColor is a hex like '#0d9488'
+  const bg = accentColor ? `${accentColor}14` : '#f0fdf4';
+  const color = accentColor || 'var(--teal-600)';
+
   return (
-    <div className="bg-white dark:bg-slate-800/60 dark:border-slate-700/50 rounded-2xl p-5 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition-all duration-300">
-      <div className="flex justify-between items-start mb-4">
-        <div className={`p-2.5 rounded-xl ${colorClass || 'bg-slate-50'} group-hover:scale-110 transition-transform duration-300`}>
-          {icon}
+    <div
+      className="relative overflow-hidden group hover:-translate-y-0.5 transition-all duration-300 cursor-default cashly-card"
+      style={{
+        borderRadius: '18px',
+        boxShadow: '0 1px 6px rgba(13,148,136,0.07)',
+      }}
+    >
+      {/* Top row */}
+      <div className="flex justify-between items-start p-5 pb-3">
+        <div
+          className="p-2.5 rounded-xl group-hover:scale-110 transition-transform duration-300"
+          style={{ background: bg }}
+        >
+          <span style={{ color }}>{icon}</span>
         </div>
+
         {trend && (
-          <span className={`px-2 py-0.5 rounded-lg text-xs font-bold ${trendUp ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400'}`}>
+          <span
+            className="px-2.5 py-1 rounded-full text-xs font-bold"
+            style={
+              trendUp
+                ? { background: '#ecfccb', color: 'var(--lime-600)' }
+                : { background: '#fee2e2', color: '#dc2626' }
+            }
+          >
             {trendUp ? '↑' : '↓'} {trend}
           </span>
         )}
       </div>
-      <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">{title}</p>
-      <p className="text-2xl font-black tracking-tight text-slate-800 dark:text-slate-100 truncate">{amount}</p>
-      {subtitle && <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-1.5">{subtitle}</p>}
+
+      {/* Content */}
+      <div className="px-5 pb-5">
+        <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--text-muted)' }}>
+          {title}
+        </p>
+        <p className="text-2xl font-black tracking-tight truncate" style={{ color: 'var(--text-primary)' }}>
+          {amount}
+        </p>
+        {subtitle && (
+          <p className="text-xs font-medium mt-1.5" style={{ color: 'var(--text-faint)' }}>
+            {subtitle}
+          </p>
+        )}
+      </div>
 
       {/* Corner glow */}
-      <div className={`absolute -bottom-6 -right-6 w-28 h-28 ${colorClass?.split(' ')[0] || 'bg-slate-50'} rounded-full blur-2xl opacity-30 dark:opacity-10 pointer-events-none`} />
+      <div
+        className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full blur-2xl opacity-20 pointer-events-none"
+        style={{ background: color }}
+      />
     </div>
   );
 };
