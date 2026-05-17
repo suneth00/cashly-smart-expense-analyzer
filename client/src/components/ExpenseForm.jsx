@@ -1,43 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import axios from '../api/axios';
+import { useTheme } from '../context/ThemeContext';
+
+const defaultDate = () => new Date().toISOString().split('T')[0];
+
+const getInitialFormData = (initialData, voiceData) => ({
+  title: voiceData?.title || initialData?.title || '',
+  amount: voiceData?.amount || initialData?.amount || '',
+  category: voiceData?.category || initialData?.category || '',
+  paymentMethod: initialData?.paymentMethod || '',
+  date: voiceData?.date || (initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : defaultDate()),
+  notes: initialData?.notes || '',
+});
 
 const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
+  const { isDark } = useTheme();
   const isEditing = !!initialData && !!initialData._id;
 
-  const [formData, setFormData] = useState({
-    title: '',
-    amount: '',
-    category: '',
-    paymentMethod: '',
-    date: new Date().toISOString().split('T')[0],
-    notes: ''
-  });
-
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        title: initialData.title || '',
-        amount: initialData.amount || '',
-        category: initialData.category || '',
-        paymentMethod: initialData.paymentMethod || '',
-        date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        notes: initialData.notes || ''
-      });
-    }
-  }, [initialData]);
-
-  useEffect(() => {
-    if (voiceData) {
-      setFormData(prev => ({
-        ...prev,
-        title: voiceData.title || prev.title,
-        amount: voiceData.amount || prev.amount,
-        category: voiceData.category || prev.category,
-        date: voiceData.date || prev.date,
-      }));
-    }
-  }, [voiceData]);
+  const [formData, setFormData] = useState(() => getInitialFormData(initialData, voiceData));
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -71,7 +52,7 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
         setSuccess('Expense added successfully!');
         setFormData({
           title: '', amount: '', category: '', paymentMethod: '',
-          date: new Date().toISOString().split('T')[0], notes: ''
+          date: defaultDate(), notes: ''
         });
       }
 
@@ -91,7 +72,7 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
     width: '100%',
     padding: '14px 20px',
     borderRadius: '14px',
-    border: '1.5px solid #d1fae5',
+    border: '1.5px solid var(--border-card)',
     background: 'var(--bg-subtle)',
     color: 'var(--text-primary)',
     fontWeight: 600,
@@ -109,10 +90,10 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
   };
 
   const wrapperStyle = isEditing ? { padding: '8px' } : {
-    background: '#ffffff',
-    border: '1px solid #d1fae5',
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border-card)',
     borderRadius: '22px',
-    boxShadow: '0 1px 6px rgba(13,148,136,0.07)',
+    boxShadow: isDark ? '0 12px 30px rgba(0,0,0,0.18)' : '0 1px 6px rgba(13,148,136,0.07)',
     padding: '32px 32px',
   };
 
@@ -207,7 +188,7 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
           </div>
         </div>
 
-        <div className="pt-5 flex justify-end" style={{ borderTop: '1px solid #d1fae5' }}>
+        <div className="pt-5 flex justify-end" style={{ borderTop: '1px solid var(--border-card)' }}>
           <button
             type="submit"
             disabled={loading}

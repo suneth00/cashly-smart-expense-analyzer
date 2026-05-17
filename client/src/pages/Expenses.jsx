@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from '../api/axios';
 import { Search, Filter, ArrowUpDown, Plus } from 'lucide-react';
 import ExpenseTable from '../components/ExpenseTable';
 import ExpenseForm from '../components/ExpenseForm';
 import { Link } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 
 const Expenses = () => {
+  const { isDark } = useTheme();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -25,14 +27,33 @@ const Expenses = () => {
     }
   };
 
-  useEffect(() => { fetchExpenses(); }, []);
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadExpenses = async () => {
+      try {
+        const res = await axios.get('/expenses');
+        if (isMounted) setExpenses(res.data);
+      } catch (error) {
+        console.error('Failed to fetch expenses', error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadExpenses();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this expense? This action cannot be undone.')) {
       try {
         await axios.delete(`/expenses/${id}`);
         setExpenses(expenses.filter(exp => exp._id !== id));
-      } catch (error) {
+      } catch {
         alert('Failed to delete expense');
       }
     }
@@ -61,7 +82,7 @@ const Expenses = () => {
     paddingTop: '14px',
     paddingBottom: '14px',
     borderRadius: '14px',
-    border: '1.5px solid #d1fae5',
+    border: '1.5px solid var(--border-card)',
     background: 'var(--bg-subtle)',
     color: 'var(--text-primary)',
     fontSize: '14px',
@@ -94,7 +115,11 @@ const Expenses = () => {
       {/* Filter Bar */}
       <div
         className="rounded-2xl p-6 md:p-8 mb-8"
-        style={{ background: '#ffffff', border: '1px solid #d1fae5', boxShadow: '0 1px 6px rgba(13,148,136,0.07)' }}
+        style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-card)',
+          boxShadow: isDark ? '0 12px 30px rgba(0,0,0,0.18)' : '0 1px 6px rgba(13,148,136,0.07)',
+        }}
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Search */}
@@ -141,18 +166,18 @@ const Expenses = () => {
           <div
             className="w-full max-w-3xl max-h-[90vh] overflow-y-auto relative"
             style={{
-              background: '#ffffff',
+              background: 'var(--bg-card)',
               borderRadius: '28px',
-              border: '1px solid #d1fae5',
-              boxShadow: '0 32px 80px rgba(13,148,136,0.20)',
+              border: '1px solid var(--border-card)',
+              boxShadow: isDark ? '0 32px 80px rgba(0,0,0,0.45)' : '0 32px 80px rgba(13,148,136,0.20)',
             }}
           >
             <button
               onClick={() => setEditingExpense(null)}
               className="absolute top-7 right-7 w-9 h-9 flex items-center justify-center rounded-full font-black text-lg transition-colors z-10"
-              style={{ background: '#ecfdf5', color: 'var(--teal-600)', border: '1px solid #d1fae5' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#ccfbf1'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#ecfdf5'; }}
+              style={{ background: 'var(--bg-subtle)', color: 'var(--teal-500)', border: '1px solid var(--border-card)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = isDark ? '#183838' : '#ccfbf1'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-subtle)'; }}
             >
               ✕
             </button>
@@ -163,7 +188,7 @@ const Expenses = () => {
               <p className="px-6 font-medium mb-4" style={{ color: 'var(--text-muted)' }}>
                 Update the details of this transaction.
               </p>
-              <ExpenseForm initialData={editingExpense} onSuccess={handleEditSuccess} />
+              <ExpenseForm key={editingExpense._id} initialData={editingExpense} onSuccess={handleEditSuccess} />
             </div>
           </div>
         </div>

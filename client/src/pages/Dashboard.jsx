@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import axios from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import StatCard from '../components/StatCard';
 import ChartCard from '../components/ChartCard';
+import CategoryBreakdownCard from '../components/CategoryBreakdownCard';
 import MoneyHealthCard from '../components/MoneyHealthCard';
 import RecommendationsCard from '../components/RecommendationsCard';
 import { Wallet, TrendingUp, Tag, ArrowRight, Plus, Activity, Sparkles, Leaf } from 'lucide-react';
@@ -11,12 +12,8 @@ import { Link } from 'react-router-dom';
 import {
   AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  ReferenceLine,
-  PieChart, Pie, Cell, Legend
+  ReferenceLine
 } from 'recharts';
-
-/* Teal-forward palette for charts */
-const COLORS = ['#0d9488', '#14b8a6', '#2dd4bf', '#84cc16', '#a3e635', '#0f766e', '#059669', '#10b981'];
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
@@ -30,7 +27,7 @@ const Dashboard = () => {
       try {
         const res = await axios.get('/analytics/summary');
         setData(res.data);
-      } catch (err) {
+      } catch {
         setError('Failed to load dashboard data. Please make sure the backend is running.');
       } finally {
         setLoading(false);
@@ -327,40 +324,10 @@ const Dashboard = () => {
             )}
           </ChartCard>
 
-          <ChartCard title="Category Breakdown" subtitle="All time by category">
-            {data.categorySummary.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={data.categorySummary}
-                    dataKey="total"
-                    nameKey="category"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={110}
-                    paddingAngle={4}
-                  >
-                    {data.categorySummary.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="transparent" />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip
-                    contentStyle={{ borderRadius: '12px', border: `1px solid ${isDark ? '#0d2626' : '#d1fae5'}`, background: isDark ? '#0f2323' : '#ffffff', boxShadow: '0 10px 25px -5px rgba(13,148,136,0.12)', padding: '10px 14px' }}
-                    formatter={(value) => [`$${value.toFixed(2)}`, 'Spent']}
-                  />
-                  <Legend
-                    verticalAlign="bottom"
-                    height={36}
-                    iconType="circle"
-                    wrapperStyle={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', paddingTop: '20px' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyChart icon={<Tag size={28} style={{ color: 'var(--lime-500)' }} />} label="No category data yet" />
-            )}
-          </ChartCard>
+          <CategoryBreakdownCard
+            categorySummary={data.categorySummary}
+            periodLabel="All time"
+          />
         </div>
 
         {/* Recent Transactions */}

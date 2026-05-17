@@ -1,13 +1,14 @@
-import React from 'react';
 import { Edit2, Trash2, Calendar, CreditCard, Tag, Receipt } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 const ExpenseTable = ({ expenses, loading, onEdit, onDelete }) => {
+  const { isDark } = useTheme();
 
   const cardStyle = {
-    background: '#ffffff',
-    border: '1px solid #d1fae5',
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border-card)',
     borderRadius: '20px',
-    boxShadow: '0 1px 6px rgba(13,148,136,0.07)',
+    boxShadow: isDark ? '0 12px 30px rgba(0,0,0,0.18)' : '0 1px 6px rgba(13,148,136,0.07)',
     overflow: 'hidden',
   };
 
@@ -23,7 +24,7 @@ const ExpenseTable = ({ expenses, loading, onEdit, onDelete }) => {
   if (expenses.length === 0) {
     return (
       <div style={{ ...cardStyle, padding: '64px', textAlign: 'center' }}>
-        <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-5" style={{ background: '#ecfdf5', border: '1px solid #d1fae5' }}>
+        <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-card)' }}>
           <Receipt size={30} style={{ color: 'var(--teal-500)' }} />
         </div>
         <h3 className="text-2xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>No expenses found</h3>
@@ -35,6 +36,20 @@ const ExpenseTable = ({ expenses, loading, onEdit, onDelete }) => {
   }
 
   const getCategoryStyle = (category) => {
+    if (isDark) {
+      const darkStyles = {
+        Food:          { background: 'rgba(132,204,22,0.12)', color: '#bef264', border: '1px solid rgba(132,204,22,0.36)' },
+        Transport:     { background: 'rgba(20,184,166,0.12)', color: '#5eead4', border: '1px solid rgba(20,184,166,0.36)' },
+        Education:     { background: 'rgba(8,145,178,0.14)', color: '#67e8f9', border: '1px solid rgba(8,145,178,0.38)' },
+        Shopping:      { background: 'rgba(245,158,11,0.13)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.38)' },
+        Bills:         { background: 'rgba(15,118,110,0.18)', color: '#99f6e4', border: '1px solid rgba(45,212,191,0.30)' },
+        Entertainment: { background: 'rgba(249,115,22,0.13)', color: '#fb923c', border: '1px solid rgba(249,115,22,0.38)' },
+        Health:        { background: 'rgba(34,197,94,0.13)', color: '#86efac', border: '1px solid rgba(34,197,94,0.38)' },
+        Other:         { background: 'rgba(100,116,139,0.18)', color: '#cbd5e1', border: '1px solid rgba(148,163,184,0.28)' },
+      };
+      return darkStyles[category] || darkStyles.Other;
+    }
+
     const styles = {
       Food:          { background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' },
       Transport:     { background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe' },
@@ -53,7 +68,7 @@ const ExpenseTable = ({ expenses, loading, onEdit, onDelete }) => {
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr style={{ background: '#f0fdf4', borderBottom: '1px solid #d1fae5' }}>
+            <tr style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-card)' }}>
               {['Title', 'Amount', 'Category', 'Date', 'Actions'].map((h, i) => (
                 <th
                   key={h}
@@ -70,8 +85,8 @@ const ExpenseTable = ({ expenses, loading, onEdit, onDelete }) => {
               <tr
                 key={expense._id}
                 className="transition-colors group cursor-default"
-                style={{ borderBottom: '1px solid #f0fdf4' }}
-                onMouseEnter={e => e.currentTarget.style.background = '#f0fdf4'}
+                style={{ borderBottom: '1px solid var(--border-card)' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-subtle)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 <td className="py-4 px-6">
@@ -106,9 +121,9 @@ const ExpenseTable = ({ expenses, loading, onEdit, onDelete }) => {
                     <button
                       onClick={() => onEdit(expense)}
                       className="p-2 rounded-xl transition-colors"
-                      style={{ color: 'var(--teal-600)', background: '#ecfdf5', border: '1px solid #d1fae5' }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#ccfbf1'}
-                      onMouseLeave={e => e.currentTarget.style.background = '#ecfdf5'}
+                      style={{ color: 'var(--teal-500)', background: 'var(--bg-subtle)', border: '1px solid var(--border-card)' }}
+                      onMouseEnter={e => e.currentTarget.style.background = isDark ? '#183838' : '#ccfbf1'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-subtle)'}
                       title="Edit"
                     >
                       <Edit2 size={17} />
@@ -116,9 +131,13 @@ const ExpenseTable = ({ expenses, loading, onEdit, onDelete }) => {
                     <button
                       onClick={() => onDelete(expense._id)}
                       className="p-2 rounded-xl transition-colors"
-                      style={{ color: '#dc2626', background: '#fee2e2', border: '1px solid #fecaca' }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#fecaca'}
-                      onMouseLeave={e => e.currentTarget.style.background = '#fee2e2'}
+                      style={{
+                        color: isDark ? '#f87171' : '#dc2626',
+                        background: isDark ? 'rgba(239,68,68,0.12)' : '#fee2e2',
+                        border: `1px solid ${isDark ? 'rgba(248,113,113,0.28)' : '#fecaca'}`,
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = isDark ? 'rgba(239,68,68,0.20)' : '#fecaca'}
+                      onMouseLeave={e => e.currentTarget.style.background = isDark ? 'rgba(239,68,68,0.12)' : '#fee2e2'}
                       title="Delete"
                     >
                       <Trash2 size={17} />

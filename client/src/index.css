@@ -172,6 +172,25 @@ body {
   box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.12);
 }
 
+.input-teal::placeholder,
+textarea::placeholder {
+  color: var(--text-faint);
+  opacity: 1;
+}
+
+select.input-teal option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+input[type="date"].input-teal::-webkit-calendar-picker-indicator {
+  opacity: 0.65;
+}
+
+.dark input[type="date"].input-teal::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
 /* ── Animated gradient hero ── */
 @keyframes gradientShift {
   0%   { background-position: 0% 50%; }
@@ -203,5 +222,30 @@ body {
 @media (max-width: 540px) {
   .category-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+.category-breakdown-layout {
+  display: grid;
+  grid-template-columns: minmax(190px, 220px) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+}
+
+.category-breakdown-chart {
+  width: min(220px, 100%);
+  height: 220px;
+  margin: 0 auto;
+}
+
+@media (max-width: 720px) {
+  .category-breakdown-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .category-breakdown-chart {
+    width: min(210px, 100%);
+    height: 210px;
   }
 }

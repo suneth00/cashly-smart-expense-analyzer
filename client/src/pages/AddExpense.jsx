@@ -1,39 +1,180 @@
-import React, { useState } from 'react';
+import { useRef, useState } from 'react';
 import ExpenseForm from '../components/ExpenseForm';
-import { Mic, AlertCircle, Sparkles } from 'lucide-react';
-import { parseVoiceInput } from '../utils/voiceParser';
+import { AlertCircle, CheckCircle2, Mic, Sparkles } from 'lucide-react';
+import { parseVoiceExpense } from '../utils/voiceExpenseParser';
+import { useTheme } from '../context/ThemeContext';
+
+const categories = ['Food', 'Transport', 'Education', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other'];
+
+const getRecognitionLanguage = () => {
+  const languages = navigator.languages || [navigator.language].filter(Boolean);
+  return languages.some((language) => language.toLowerCase() === 'en-lk') ? 'en-LK' : 'en-US';
+};
+
+const getSpeechErrorMessage = (error) => {
+  if (error === 'not-allowed' || error === 'service-not-allowed') {
+    return 'Microphone access was denied. Please allow microphone access and try again.';
+  }
+
+  if (error === 'no-speech') {
+    return 'I did not hear anything. Please try again in a quiet place.';
+  }
+
+  if (error === 'audio-capture') {
+    return 'No microphone was found. Please connect a microphone and try again.';
+  }
+
+  if (error === 'network') {
+    return 'Speech recognition had a network issue. Please try again.';
+  }
+
+  return 'Voice input stopped unexpectedly. Please try again.';
+};
+
+const getConfidenceStyle = (confidence, isDark) => {
+  if (confidence === 'high') {
+    return {
+      background: isDark ? 'rgba(34,197,94,0.16)' : '#dcfce7',
+      border: `1px solid ${isDark ? 'rgba(134,239,172,0.35)' : '#86efac'}`,
+      color: isDark ? '#86efac' : '#15803d',
+    };
+  }
+
+  if (confidence === 'medium') {
+    return {
+      background: isDark ? 'rgba(245,158,11,0.16)' : '#fef3c7',
+      border: `1px solid ${isDark ? 'rgba(251,191,36,0.35)' : '#fde68a'}`,
+      color: isDark ? '#fbbf24' : '#92400e',
+    };
+  }
+
+  return {
+    background: isDark ? 'rgba(239,68,68,0.14)' : '#fee2e2',
+    border: `1px solid ${isDark ? 'rgba(248,113,113,0.32)' : '#fecaca'}`,
+    color: isDark ? '#f87171' : '#b91c1c',
+  };
+};
 
 const AddExpense = () => {
+  const { isDark } = useTheme();
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const [parsedData, setParsedData] = useState(null);
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [parsedResult, setParsedResult] = useState(null);
+  const [voiceDraft, setVoiceDraft] = useState(null);
+  const [confirmedVoiceData, setConfirmedVoiceData] = useState(null);
   const [supportError, setSupportError] = useState('');
 
+  const heardSpeechRef = useRef(false);
+  const hadSpeechErrorRef = useRef(false);
+  const finalTranscriptRef = useRef('');
+  const interimTranscriptRef = useRef('');
+
+  const formKey = confirmedVoiceData ? JSON.stringify(confirmedVoiceData) : 'manual';
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  const previewInputStyle = {
+    width: '100%',
+    padding: '11px 13px',
+    borderRadius: 12,
+    border: '1px solid var(--border-card)',
+    background: 'var(--bg-subtle)',
+    color: 'var(--text-primary)',
+    fontSize: 13,
+    fontWeight: 700,
+    outline: 'none',
+  };
+
+  const applyParsedTranscript = (text) => {
+    const finalText = text.trim();
+    if (!finalText) return;
+
+    const parsed = parseVoiceExpense(finalText);
+    setTranscript(finalText);
+    setParsedResult(parsed);
+    setVoiceDraft(parsed.fields);
+  };
+
+  const updateVoiceDraft = (field, value) => {
+    setVoiceDraft((current) => ({ ...current, [field]: value }));
+  };
+
+  const useDetectedExpense = () => {
+    if (!voiceDraft) return;
+    setConfirmedVoiceData({ ...voiceDraft });
+  };
 
   const startListening = () => {
     if (!SpeechRecognition) {
-      setSupportError('Your browser does not support voice recognition. Please try Chrome, Edge, or Safari.');
+      setSupportError('Your browser does not support voice recognition. Please try Chrome or Edge.');
       return;
     }
+
     setSupportError('');
+    setTranscript('');
+    setInterimTranscript('');
+    setParsedResult(null);
+    setVoiceDraft(null);
+    heardSpeechRef.current = false;
+    hadSpeechErrorRef.current = false;
+    finalTranscriptRef.current = '';
+    interimTranscriptRef.current = '';
+
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
+    recognition.interimResults = true;
+    recognition.lang = getRecognitionLanguage();
 
-    recognition.onstart = () => { setIsListening(true); setTranscript(''); setParsedData(null); };
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
     recognition.onresult = (event) => {
-      const recognizedText = event.results[event.resultIndex][0].transcript;
-      setTranscript(recognizedText);
-      setParsedData(parseVoiceInput(recognizedText));
+      let finalText = '';
+      let interimText = '';
+
+      for (let i = 0; i < event.results.length; i += 1) {
+        const phrase = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalText += `${phrase} `;
+        } else {
+          interimText += `${phrase} `;
+        }
+      }
+
+      if (finalText.trim() || interimText.trim()) {
+        heardSpeechRef.current = true;
+      }
+
+      finalTranscriptRef.current = finalText.trim();
+      interimTranscriptRef.current = interimText.trim();
+      setTranscript(finalTranscriptRef.current);
+      setInterimTranscript(interimTranscriptRef.current);
+
+      if (finalTranscriptRef.current) {
+        applyParsedTranscript(finalTranscriptRef.current);
+      }
     };
+
     recognition.onerror = (event) => {
-      console.error(event.error);
+      hadSpeechErrorRef.current = true;
       setIsListening(false);
-      setSupportError('Microphone error or permission denied. Please allow microphone access.');
+      setSupportError(getSpeechErrorMessage(event.error));
     };
-    recognition.onend = () => setIsListening(false);
+
+    recognition.onend = () => {
+      setIsListening(false);
+      setInterimTranscript('');
+
+      if (!finalTranscriptRef.current && interimTranscriptRef.current) {
+        applyParsedTranscript(interimTranscriptRef.current);
+      }
+
+      if (!heardSpeechRef.current && !hadSpeechErrorRef.current) {
+        setSupportError('I did not hear anything. Please try again.');
+      }
+    };
+
     recognition.start();
   };
 
@@ -46,48 +187,50 @@ const AddExpense = () => {
         </p>
       </div>
 
-      {/* Voice Assistant UI */}
       <div
-        className="rounded-3xl p-8 md:p-10 mb-8 relative overflow-hidden transition-all duration-300 hover:shadow-lg group"
+        className="rounded-3xl p-6 md:p-8 mb-8 relative overflow-hidden transition-all duration-300 hover:shadow-lg group"
         style={{
-          background: 'linear-gradient(135deg, #ecfdf5, #f0fdf4)',
-          border: '1px solid #bbf7d0',
-          boxShadow: '0 2px 12px rgba(13,148,136,0.08)',
+          background: isDark
+            ? 'linear-gradient(135deg, #0f2323, #123332)'
+            : 'linear-gradient(135deg, #ecfdf5, #f0fdf4)',
+          border: `1px solid ${isDark ? '#1a3d3d' : '#bbf7d0'}`,
+          boxShadow: isDark
+            ? '0 12px 30px rgba(0,0,0,0.18)'
+            : '0 2px 12px rgba(13,148,136,0.08)',
         }}
       >
-        {/* Decorative blob */}
         <div
-          className="absolute top-0 right-0 w-56 h-56 rounded-full blur-3xl opacity-30 pointer-events-none group-hover:scale-110 transition-transform duration-500"
-          style={{ background: 'var(--teal-400)' }}
+          className="absolute top-0 right-0 w-56 h-56 rounded-full blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-500"
+          style={{ background: 'var(--teal-400)', opacity: isDark ? 0.12 : 0.3 }}
+        />
+        <div
+          className="absolute -bottom-16 left-8 w-44 h-44 rounded-full blur-3xl pointer-events-none"
+          style={{ background: 'var(--teal-400)', opacity: isDark ? 0.08 : 0.16 }}
         />
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10">
-          <div className="text-center sm:text-left">
+        <div className="flex flex-col lg:flex-row items-start justify-between gap-6 relative z-10">
+          <div className="min-w-0 flex-1">
             <h3
-              className="text-2xl font-black mb-3 flex items-center justify-center sm:justify-start gap-2 tracking-tight"
-              style={{ color: 'var(--teal-800)' }}
+              className="text-2xl font-black mb-3 flex items-center gap-2 tracking-tight"
+              style={{ color: isDark ? 'var(--text-primary)' : 'var(--teal-800)' }}
             >
               <Mic size={26} style={{ color: 'var(--teal-600)' }} /> Voice Assistant
             </h3>
-            <p className="font-medium text-base max-w-sm leading-relaxed" style={{ color: 'var(--teal-700)' }}>
-              Tap the microphone and say something like{' '}
-              <span
-                className="font-bold px-2 py-0.5 rounded-lg"
-                style={{ background: 'rgba(255,255,255,0.7)', color: 'var(--teal-800)' }}
-              >
-                "Spent 45 dollars on Food yesterday"
-              </span>{' '}
-              to autofill the form!
+            <p className="font-medium text-base max-w-xl leading-relaxed" style={{ color: isDark ? 'var(--text-muted)' : 'var(--teal-700)' }}>
+              {isListening
+                ? 'Listening... Say something like: I spent 850 rupees on food today'
+                : 'Say an expense naturally, then review the detected details before using them.'}
             </p>
           </div>
 
           <button
             onClick={startListening}
-            title="Click to speak"
-            className={`w-24 h-24 rounded-[2rem] flex shrink-0 items-center justify-center transition-all duration-300 shadow-xl border-4 ${
+            disabled={isListening}
+            title="Start voice input"
+            className={`shrink-0 rounded-2xl flex items-center justify-center gap-2 px-5 py-4 transition-all duration-300 shadow-xl border-2 font-black text-sm ${
               isListening
-                ? 'animate-pulse scale-110'
-                : 'hover:scale-105 hover:rotate-3'
+                ? 'animate-pulse cursor-wait'
+                : 'hover:scale-105'
             }`}
             style={
               isListening
@@ -95,52 +238,164 @@ const AddExpense = () => {
                     background: '#ef4444',
                     color: '#fff',
                     borderColor: '#fca5a5',
-                    boxShadow: '0 0 0 12px rgba(239,68,68,0.15), 0 8px 24px rgba(239,68,68,0.35)',
+                    boxShadow: '0 0 0 10px rgba(239,68,68,0.14), 0 8px 24px rgba(239,68,68,0.28)',
                   }
                 : {
                     background: 'var(--teal-600)',
                     color: '#fff',
-                    borderColor: '#ccfbf1',
+                    borderColor: isDark ? '#1a3d3d' : '#ccfbf1',
                     boxShadow: '0 8px 24px rgba(13,148,136,0.35)',
                   }
             }
           >
-            <Mic size={34} />
+            <Mic size={20} />
+            {isListening ? 'Listening...' : 'Start Voice Input'}
           </button>
         </div>
 
         {supportError && (
           <div
-            className="mt-8 p-4 rounded-2xl text-sm font-bold flex items-center gap-3"
-            style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#dc2626' }}
+            className="mt-6 p-4 rounded-2xl text-sm font-bold flex items-center gap-3 relative z-10"
+            style={{
+              background: isDark ? 'rgba(239,68,68,0.13)' : '#fee2e2',
+              border: `1px solid ${isDark ? 'rgba(248,113,113,0.32)' : '#fca5a5'}`,
+              color: isDark ? '#f87171' : '#dc2626',
+            }}
           >
             <AlertCircle size={18} className="shrink-0" /> {supportError}
           </div>
         )}
 
-        {transcript && (
+        {(transcript || interimTranscript) && (
           <div
-            className="mt-8 p-6 rounded-2xl relative overflow-hidden"
-            style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid #d1fae5', backdropFilter: 'blur(8px)' }}
+            className="mt-6 p-5 rounded-2xl relative z-10"
+            style={{
+              background: isDark ? 'rgba(15,35,35,0.92)' : 'rgba(255,255,255,0.85)',
+              border: `1px solid ${isDark ? '#1a3d3d' : '#d1fae5'}`,
+              backdropFilter: 'blur(8px)',
+            }}
           >
             <p className="text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-2" style={{ color: 'var(--teal-600)' }}>
               <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--lime-400)' }} />
-              Speech Recognized:
+              You said:
             </p>
-            <p className="font-bold italic text-xl tracking-tight" style={{ color: 'var(--text-primary)' }}>"{transcript}"</p>
-            {parsedData && (
-              <div
-                className="absolute top-4 right-4 p-1.5 rounded-full"
-                style={{ background: '#dcfce7', color: '#16a34a' }}
+            <p className="font-bold italic text-lg tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              "{transcript || interimTranscript}"
+            </p>
+          </div>
+        )}
+
+        {parsedResult && voiceDraft && (
+          <div
+            className="mt-6 p-5 rounded-2xl relative z-10"
+            style={{
+              background: isDark ? 'rgba(15,35,35,0.92)' : 'rgba(255,255,255,0.88)',
+              border: `1px solid ${isDark ? '#1a3d3d' : '#d1fae5'}`,
+            }}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} style={{ color: 'var(--teal-500)' }} />
+                <p className="font-black" style={{ color: 'var(--text-primary)' }}>
+                  Detected details
+                </p>
+              </div>
+              <span
+                className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest"
+                style={getConfidenceStyle(parsedResult.confidence, isDark)}
               >
-                <Sparkles size={15} />
+                {parsedResult.confidence}
+              </span>
+            </div>
+
+            <p className="mb-4 text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>
+              {parsedResult.confidenceMessage}
+            </p>
+
+            {parsedResult.warnings.length > 0 && (
+              <div className="space-y-2 mb-4">
+                {parsedResult.warnings.map((warning) => (
+                  <div
+                    key={warning}
+                    className="flex items-start gap-2 rounded-xl px-3 py-2 text-sm font-semibold"
+                    style={{
+                      background: isDark ? 'rgba(245,158,11,0.12)' : '#fffbeb',
+                      border: `1px solid ${isDark ? 'rgba(251,191,36,0.30)' : '#fde68a'}`,
+                      color: isDark ? '#fbbf24' : '#92400e',
+                    }}
+                  >
+                    <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                    {warning}
+                  </div>
+                ))}
               </div>
             )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label className="text-xs font-black uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>
+                Amount
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={voiceDraft.amount}
+                  onChange={(event) => updateVoiceDraft('amount', event.target.value)}
+                  style={{ ...previewInputStyle, marginTop: 8 }}
+                  className="input-teal"
+                  placeholder="Enter amount"
+                />
+              </label>
+              <label className="text-xs font-black uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>
+                Category
+                <select
+                  value={voiceDraft.category}
+                  onChange={(event) => updateVoiceDraft('category', event.target.value)}
+                  style={{ ...previewInputStyle, marginTop: 8, appearance: 'none' }}
+                  className="input-teal"
+                >
+                  {categories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs font-black uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>
+                Title
+                <input
+                  type="text"
+                  value={voiceDraft.title}
+                  onChange={(event) => updateVoiceDraft('title', event.target.value)}
+                  style={{ ...previewInputStyle, marginTop: 8 }}
+                  className="input-teal"
+                  placeholder="Expense title"
+                />
+              </label>
+              <label className="text-xs font-black uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>
+                Date
+                <input
+                  type="date"
+                  value={voiceDraft.date}
+                  onChange={(event) => updateVoiceDraft('date', event.target.value)}
+                  style={{ ...previewInputStyle, marginTop: 8 }}
+                  className="input-teal"
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={useDetectedExpense}
+                className="btn-teal px-5 py-3 text-sm flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 size={17} />
+                Use This Expense
+              </button>
+            </div>
           </div>
         )}
       </div>
 
-      <ExpenseForm voiceData={parsedData} />
+      <ExpenseForm key={formKey} voiceData={confirmedVoiceData} />
     </div>
   );
 };
