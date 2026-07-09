@@ -172,6 +172,31 @@ const Dashboard = () => {
         .db-action:hover { transform: translateY(-2px); filter: brightness(1.08); }
         .db-tx:hover { background: var(--bg-subtle) !important; }
         .db-step:hover { border-color: var(--teal-500) !important; background: rgba(13,148,136,0.05) !important; }
+        .db-dashboard-page {
+          width: 100%;
+          min-width: 0;
+          padding-bottom: 24px;
+          animation: db-fadeIn 0.3s ease;
+        }
+        .db-budget-grid,
+        .db-stat-grid,
+        .db-tips-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+          width: 100%;
+          min-width: 0;
+        }
+        .db-budget-grid {
+          gap: 16px;
+          margin-bottom: 20px;
+        }
+        .db-stat-grid {
+          gap: 14px;
+          margin-bottom: 20px;
+        }
+        .db-tips-grid {
+          gap: 12px;
+        }
         .db-chart-grid {
           display: grid;
           grid-template-columns: minmax(0, 1fr);
@@ -185,7 +210,23 @@ const Dashboard = () => {
           width: 100%;
           overflow: hidden;
         }
+        @media (min-width: 640px) {
+          .db-stat-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+        @media (min-width: 1024px) {
+          .db-budget-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .db-tips-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
         @media (min-width: 1280px) {
+          .db-stat-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+          }
           .db-chart-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
             align-items: stretch;
@@ -199,7 +240,7 @@ const Dashboard = () => {
         }
       `}</style>
 
-      <div style={{ width: '100%', paddingBottom: '48px', animation: 'db-fadeIn 0.3s ease' }}>
+      <div className="db-dashboard-page">
 
         {/* ════════════════════════════════════════
             SECTION 1 — WELCOME HERO
@@ -266,10 +307,7 @@ const Dashboard = () => {
         {/* ════════════════════════════════════════
             SECTION 2 — BUDGET OVERVIEW (most important for beginners)
         ════════════════════════════════════════ */}
-        <div style={{
-          display:'grid', gridTemplateColumns:'1fr 1fr',
-          gap:'16px', marginBottom:'20px',
-        }}>
+        <div className="db-budget-grid">
 
           {/* Monthly Budget Card */}
           <div className="db-card cashly-card" style={{ borderRadius:'20px', padding:'24px' }}>
@@ -425,10 +463,7 @@ const Dashboard = () => {
         {/* ════════════════════════════════════════
             SECTION 3 — SIMPLE STAT CARDS
         ════════════════════════════════════════ */}
-        <div style={{
-          display:'grid',gridTemplateColumns:'repeat(4,1fr)',
-          gap:'14px', marginBottom:'20px',
-        }}>
+        <div className="db-stat-grid">
           {[
             {
               icon:<Wallet size={18}/>,
@@ -739,7 +774,7 @@ const Dashboard = () => {
           }}>
             <Sparkles size={13} style={{ color:'var(--teal-500)' }}/> Quick Tips
           </p>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'12px' }}>
+          <div className="db-tips-grid">
             {[
               { emoji:'🏷️', title:'Categorise expenses',   body:'Add a category when logging expenses — it helps you see where your money goes.' },
               { emoji:'📅', title:'Track weekly',           body:'Check your dashboard every week to spot spending spikes before they grow.' },

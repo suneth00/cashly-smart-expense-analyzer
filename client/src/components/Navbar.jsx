@@ -83,7 +83,7 @@ const Navbar = ({ toggleMenu }) => {
       <div className="flex items-center gap-4 flex-1 min-w-0">
         <button
           onClick={toggleMenu}
-          className="md:hidden p-2 rounded-xl transition-colors"
+          className="lg:hidden p-2 rounded-xl transition-colors"
           style={{ color: 'var(--teal-600)', background: 'var(--teal-50)' }}
           onMouseEnter={e => { e.currentTarget.style.background = 'var(--teal-100)'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'var(--teal-50)'; }}

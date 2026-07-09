@@ -14,26 +14,26 @@ const ProtectedRoute = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden font-sans" style={{ background: 'var(--bg-main)' }}>
+    <div className="flex min-h-screen font-sans" style={{ background: 'var(--bg-main)' }}>
       {/* Sidebar: fixed 260px wide on desktop, slide-in drawer on mobile */}
       <Sidebar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} />
 
       {/* Mobile backdrop overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 backdrop-blur-sm z-30 md:hidden"
+          className="fixed inset-0 backdrop-blur-sm z-30 lg:hidden"
           style={{ background: 'rgba(13,43,43,0.55)' }}
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Main area: takes all remaining width to the right of the sidebar */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex min-h-screen flex-1 min-w-0 flex-col">
         <Navbar toggleMenu={() => setIsMobileMenuOpen(true)} />
 
-        {/* Scrollable page content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar" style={{ background: 'var(--bg-main)' }}>
-          <div className="w-full px-6 py-6 md:px-8 md:py-8">
+        {/* Page content */}
+        <main className="min-w-0 flex-1 overflow-x-hidden custom-scrollbar" style={{ background: 'var(--bg-main)' }}>
+          <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
             <Outlet />
           </div>
         </main>

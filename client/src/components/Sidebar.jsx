@@ -65,12 +65,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     <>
       <aside
         className={`
-          fixed inset-y-0 left-0 z-40 w-[260px] flex flex-col
+          fixed inset-y-0 left-0 z-40 flex h-screen max-h-screen w-[260px] flex-col
           cashly-sidebar
-          shadow-2xl md:shadow-none
+          shadow-2xl
           transition-all duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          md:relative md:translate-x-0 md:flex md:shrink-0
+          lg:sticky lg:top-0 lg:translate-x-0 lg:shrink-0 lg:shadow-none
         `}
         style={{ background: 'var(--sidebar-bg)' }}
       >
@@ -105,7 +105,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
           {/* Mobile close button */}
           <button
-            className="md:hidden p-1.5 rounded-full transition-colors"
+            className="lg:hidden p-1.5 rounded-full transition-colors"
             style={{ color: 'var(--sidebar-muted)', background: 'var(--sidebar-hover)' }}
             onClick={() => setIsOpen(false)}
           >
