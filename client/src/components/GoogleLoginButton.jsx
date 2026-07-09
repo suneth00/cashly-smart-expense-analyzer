@@ -1,9 +1,11 @@
 import React, { useContext } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 const GoogleLoginButton = ({ setError, setIsLoading, disabled = false }) => {
   const { loginWithGoogle } = useContext(AuthContext);
+  const navigate = useNavigate();
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const handleSuccess = async (credentialResponse) => {
@@ -21,6 +23,7 @@ const GoogleLoginButton = ({ setError, setIsLoading, disabled = false }) => {
 
     try {
       await loginWithGoogle(credentialResponse.credential);
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       setError?.(err.response?.data?.message || 'Google login failed. Please try again.');
     } finally {

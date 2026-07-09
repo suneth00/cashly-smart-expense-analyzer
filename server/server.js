@@ -21,6 +21,7 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
   'https://cashly-smart-expense-analyzer.vercel.app',
+  'https://cashly-smart-expense-analyzer-nine.vercel.app',
   ...(process.env.CLIENT_URL || '').split(','),
   ...(process.env.FRONTEND_URL || '').split(','),
   ...(process.env.CORS_ORIGIN || '').split(','),
