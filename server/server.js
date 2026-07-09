@@ -22,6 +22,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.get("/", (req, res) => {
+  res.send("CASHLY Backend API is running");
+});
+
+app.get("/api/test", (req, res) => {
+  res.json({ message: "CASHLY API is running" });
+});
+
 // Routes
 app.use('/api/test', testRoutes);
 app.use('/api/auth', authRoutes);
