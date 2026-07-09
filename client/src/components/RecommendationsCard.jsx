@@ -1,225 +1,299 @@
 import { useEffect, useState } from 'react';
 import axios from '../api/axios';
-import { AlertCircle, CheckCircle2, Lightbulb, ShieldAlert, Sparkles, Tag } from 'lucide-react';
+import { Lightbulb, ArrowRight, Sparkles, CheckCircle } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
-const priorityLabels = {
-  high: 'High',
-  medium: 'Medium',
-  low: 'Low',
+/* ── Category → emoji ── */
+const categoryEmoji = (cat = '') => {
+  const c = cat.toLowerCase();
+  if (c.includes('budget'))        return '💰';
+  if (c.includes('saving'))        return '🎯';
+  if (c.includes('track'))        return '📊';
+  if (c.includes('food'))         return '🍔';
+  if (c.includes('transport'))    return '🚗';
+  if (c.includes('health'))       return '💊';
+  if (c.includes('entertainment'))return '🎬';
+  if (c.includes('shopping'))     return '🛍️';
+  if (c.includes('bill'))         return '🧾';
+  if (c.includes('invest'))       return '📈';
+  if (c.includes('habit'))        return '🔄';
+  return '💡';
 };
 
-const getPriorityMeta = (priority, isDark) => {
-  if (priority === 'high') {
-    return {
-      icon: <ShieldAlert size={21} style={{ color: '#f43f5e' }} />,
-      cardBg: isDark ? 'rgba(244,63,94,0.12)' : 'rgba(244,63,94,0.08)',
-      border: '1px solid rgba(244,63,94,0.26)',
-      badgeBg: isDark ? 'rgba(244,63,94,0.18)' : '#ffe4e6',
-      badgeColor: isDark ? '#fda4af' : '#be123c',
-      badgeBorder: isDark ? 'rgba(251,113,133,0.35)' : '#fecdd3',
-    };
-  }
-
-  if (priority === 'medium') {
-    return {
-      icon: <AlertCircle size={21} style={{ color: '#f59e0b' }} />,
-      cardBg: isDark ? 'rgba(245,158,11,0.12)' : 'rgba(245,158,11,0.08)',
-      border: '1px solid rgba(245,158,11,0.27)',
-      badgeBg: isDark ? 'rgba(245,158,11,0.18)' : '#fef3c7',
-      badgeColor: isDark ? '#fbbf24' : '#92400e',
-      badgeBorder: isDark ? 'rgba(251,191,36,0.35)' : '#fde68a',
-    };
-  }
-
-  return {
-    icon: <CheckCircle2 size={21} style={{ color: 'var(--teal-500)' }} />,
-    cardBg: isDark ? 'rgba(13,148,136,0.13)' : 'rgba(13,148,136,0.08)',
-    border: '1px solid rgba(13,148,136,0.24)',
-    badgeBg: isDark ? 'rgba(20,184,166,0.18)' : '#ccfbf1',
-    badgeColor: isDark ? '#5eead4' : '#0f766e',
-    badgeBorder: isDark ? 'rgba(94,234,212,0.30)' : '#99f6e4',
-  };
+/* ── Priority config ── */
+const PRIORITY = {
+  high: {
+    label:   'Action Needed',
+    diff:    'Urgent',
+    badge:   { bg: 'rgba(239,68,68,0.12)',  color: '#ef4444', border: 'rgba(239,68,68,0.25)'  },
+    card:    { bg: 'rgba(239,68,68,0.06)',  border: 'rgba(239,68,68,0.18)'  },
+    action:  { bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.20)', color: '#ef4444' },
+  },
+  medium: {
+    label:   'Good to Know',
+    diff:    'Medium',
+    badge:   { bg: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: 'rgba(245,158,11,0.25)' },
+    card:    { bg: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.18)' },
+    action:  { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.20)', color: '#f59e0b' },
+  },
+  low: {
+    label:   'Nice to Do',
+    diff:    'Easy',
+    badge:   { bg: 'rgba(13,148,136,0.12)', color: 'var(--teal-600)', border: 'rgba(13,148,136,0.25)' },
+    card:    { bg: 'rgba(13,148,136,0.06)', border: 'rgba(13,148,136,0.18)' },
+    action:  { bg: 'rgba(13,148,136,0.08)', border: 'rgba(13,148,136,0.20)', color: 'var(--teal-600)' },
+  },
 };
 
 const RecommendationsCard = () => {
-  const { isDark } = useTheme();
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { isDark }               = useTheme();
+  const [data,    setData]       = useState([]);
+  const [loading, setLoading]    = useState(true);
+  const [error,   setError]      = useState(null);
+  const [done,    setDone]       = useState({});   // tip id → boolean
 
   useEffect(() => {
-    const fetchRecs = async () => {
-      try {
-        const res = await axios.get('/recommendations');
-        setData(Array.isArray(res.data) ? res.data : []);
-      } catch {
-        setError('Failed to load recommendations');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRecs();
+    axios.get('/recommendations')
+      .then(r => setData(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setError('Could not load tips.'))
+      .finally(() => setLoading(false));
   }, []);
 
-  const cardStyle = {
-    background: 'var(--bg-card)',
-    border: '1px solid',
-    borderColor: 'var(--border-card, #d1fae5)',
-    borderRadius: '22px',
-    boxShadow: isDark ? '0 12px 30px rgba(0,0,0,0.18)' : '0 1px 6px rgba(13,148,136,0.07)',
-    padding: '28px 24px',
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    position: 'relative',
-    overflow: 'hidden',
-    transition: 'background 0.3s ease, border-color 0.3s ease',
-  };
+  const toggleDone = (i) => setDone(d => ({ ...d, [i]: !d[i] }));
+  const doneCount  = Object.values(done).filter(Boolean).length;
 
-  if (loading) {
-    return (
-      <div style={cardStyle} className="items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-4" style={{ borderColor: 'var(--teal-600)' }} />
-      </div>
-    );
-  }
+  /* Loading */
+  if (loading) return (
+    <div className="cashly-card" style={{ borderRadius: '22px', padding: '28px', minHeight: '420px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: '3px solid var(--border-card)', borderTopColor: 'var(--teal-500)', animation: 'rc-spin 0.8s linear infinite' }} />
+      <style>{`@keyframes rc-spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
-  if (error || data.length === 0) {
-    return (
-      <div style={cardStyle} className="items-center justify-center min-h-[400px] text-center">
-        <Sparkles size={40} style={{ color: '#d1fae5', marginBottom: '16px' }} />
-        <p className="font-bold text-lg mb-1" style={{ color: 'var(--text-secondary)' }}>
-          {error || 'No advice yet'}
-        </p>
-        <p className="text-sm font-medium" style={{ color: 'var(--text-faint)' }}>
-          Keep tracking your expenses to get insights.
-        </p>
-      </div>
-    );
-  }
+  /* Empty / Error */
+  if (error || data.length === 0) return (
+    <div className="cashly-card" style={{ borderRadius: '22px', padding: '28px', minHeight: '420px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+      <p style={{ fontSize: '40px', marginBottom: '12px' }}>💡</p>
+      <p style={{ fontWeight: 800, fontSize: '16px', color: 'var(--text-primary)', margin: '0 0 6px' }}>
+        {error || 'No tips yet!'}
+      </p>
+      <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '260px', lineHeight: 1.6 }}>
+        Keep tracking your expenses and set your monthly income — tips will appear based on your real spending.
+      </p>
+    </div>
+  );
 
   return (
-    <div style={cardStyle}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8 relative z-10">
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-2xl" style={{ background: '#fef9c3', color: '#854d0e' }}>
-            <Sparkles size={22} />
+    <>
+      <style>{`
+        @keyframes rc-spin   { to { transform: rotate(360deg); } }
+        @keyframes rc-fadeIn { from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)} }
+        .rc-card { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+        .rc-card:hover { transform: translateY(-2px); }
+        .rc-done-btn:hover { opacity: 0.85; }
+      `}</style>
+
+      <div className="cashly-card" style={{
+        borderRadius: '22px', padding: '28px',
+        display: 'flex', flexDirection: 'column', gap: '20px',
+        animation: 'rc-fadeIn 0.3s ease',
+      }}>
+
+        {/* ── Header ── */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '40px', height: '40px', borderRadius: '12px',
+              background: 'rgba(245,158,11,0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '20px',
+            }}>
+              💡
+            </div>
+            <div>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: '16px', color: 'var(--text-primary)' }}>
+                Personalized Tips
+              </p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontWeight: 500 }}>
+                Your AI money coach · based on real spending
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Smart Advice</h3>
-            <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text-faint)' }}>AI-driven financial insights</p>
-          </div>
-        </div>
-        {/* Live badge */}
-        <div
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-          style={{
+
+          {/* Live badge */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            padding: '5px 12px', borderRadius: '999px',
             background: isDark ? '#122828' : '#ecfdf5',
-            color: isDark ? '#99f6e4' : 'var(--teal-700)',
             border: `1px solid ${isDark ? '#0d2626' : '#99f6e4'}`,
-          }}
-        >
-          <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'var(--lime-400)' }} />
-          Live
+            color: isDark ? '#99f6e4' : 'var(--teal-700)',
+            fontSize: '11px', fontWeight: 700,
+          }}>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#84cc16', display: 'inline-block' }} />
+            Live
+          </div>
         </div>
-      </div>
 
-      {/* Recommendation list */}
-      <div className="flex-1 space-y-4 overflow-y-auto pr-1 custom-scrollbar relative z-10">
-        {data.map((rec, i) => {
-          const meta = getPriorityMeta(rec.priority, isDark);
-          const priorityLabel = priorityLabels[rec.priority] || 'Low';
+        {/* ── Intro banner ── */}
+        <div style={{
+          padding: '12px 16px', borderRadius: '14px',
+          background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.18)',
+        }}>
+          <p style={{ margin: 0, fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            🤖 These tips are generated from your actual spending patterns. Mark them done as you act on them!
+          </p>
+        </div>
 
-          return (
-            <div
-              key={`${rec.title}-${i}`}
-              className="p-4 sm:p-5 rounded-2xl transition-all duration-300 hover:-translate-y-0.5 cursor-default"
-              style={{
-                background: meta.cardBg,
-                border: meta.border,
-                boxShadow: isDark ? '0 1px 4px rgba(0,0,0,0.12)' : '0 1px 4px rgba(0,0,0,0.04)',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.boxShadow = isDark
-                  ? '0 8px 20px rgba(0,0,0,0.22)'
-                  : '0 4px 14px rgba(0,0,0,0.08)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.boxShadow = isDark
-                  ? '0 1px 4px rgba(0,0,0,0.12)'
-                  : '0 1px 4px rgba(0,0,0,0.04)';
-              }}
-            >
-              <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                <div
-                  className="shrink-0 mt-0.5 p-2.5 rounded-xl"
-                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)' }}
-                >
-                  {meta.icon}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
-                    <h4 className="font-black text-base tracking-tight leading-tight" style={{ color: 'var(--text-primary)' }}>
-                      {rec.title}
-                    </h4>
-                    <span
-                      className="shrink-0 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
-                      style={{
-                        background: meta.badgeBg,
-                        color: meta.badgeColor,
-                        border: `1px solid ${meta.badgeBorder}`,
-                      }}
-                    >
-                      {priorityLabel}
-                    </span>
+        {/* ── Progress bar ── */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#9ca3af' }}>
+              Tips acted on
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: 900, color: 'var(--teal-600)' }}>
+                {doneCount} / {data.length}
+              </p>
+              {doneCount === data.length && data.length > 0 && (
+                <span style={{ fontSize: '12px' }}>🎉</span>
+              )}
+            </div>
+          </div>
+          <div style={{ height: '8px', borderRadius: '999px', background: 'var(--bg-subtle)', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', borderRadius: '999px',
+              width: `${data.length > 0 ? (doneCount / data.length) * 100 : 0}%`,
+              background: doneCount === data.length && data.length > 0
+                ? '#22c55e'
+                : 'linear-gradient(90deg, var(--teal-600), #84cc16)',
+              transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',
+              boxShadow: doneCount > 0 ? '0 0 8px rgba(13,148,136,0.40)' : 'none',
+            }} />
+          </div>
+        </div>
+
+        {/* ── Tip cards ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '480px', overflowY: 'auto', paddingRight: '4px' }}>
+          {data.map((rec, i) => {
+            const p    = PRIORITY[rec.priority] || PRIORITY.low;
+            const isDn = done[i] || false;
+            const emoji = categoryEmoji(rec.category || rec.title);
+
+            return (
+              <div key={i} className="rc-card" style={{
+                borderRadius: '16px', padding: '16px',
+                background: isDn ? 'rgba(34,197,94,0.06)' : p.card.bg,
+                border: isDn ? '1px solid rgba(34,197,94,0.25)' : `1px solid ${p.card.border}`,
+                opacity: isDn ? 0.55 : 1,
+                transition: 'all 0.25s ease',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+
+                  {/* Emoji icon */}
+                  <div style={{
+                    width: '44px', height: '44px', borderRadius: '12px', flexShrink: 0,
+                    background: 'var(--bg-card)', border: '1px solid var(--border-card)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '22px',
+                  }}>
+                    {isDn ? '✅' : emoji}
                   </div>
 
-                  <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                    {rec.message}
-                  </p>
-
-                  {rec.action && (
-                    <div
-                      className="mt-4 rounded-xl px-3.5 py-3 text-sm font-semibold leading-relaxed flex gap-2"
-                      style={{
-                        background: isDark ? 'rgba(15,35,35,0.72)' : 'rgba(255,255,255,0.72)',
-                        border: '1px solid var(--border-card)',
-                        color: 'var(--text-secondary)',
-                      }}
-                    >
-                      <Lightbulb size={16} className="shrink-0 mt-0.5" style={{ color: 'var(--teal-500)' }} />
-                      <span><strong>Action:</strong> {rec.action}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Title row */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                      <p style={{
+                        margin: 0, fontWeight: 800, fontSize: '14px',
+                        color: isDn ? 'var(--text-faint)' : 'var(--text-primary)',
+                        textDecoration: isDn ? 'line-through' : 'none',
+                        lineHeight: 1.3,
+                      }}>
+                        {rec.title}
+                      </p>
+                      <span style={{
+                        flexShrink: 0, fontSize: '10px', fontWeight: 800,
+                        padding: '3px 10px', borderRadius: '999px',
+                        background: p.badge.bg, color: p.badge.color, border: `1px solid ${p.badge.border}`,
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {p.label}
+                      </span>
                     </div>
-                  )}
 
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
-                      style={{
-                        background: isDark ? 'rgba(18,40,40,0.86)' : '#ffffff',
-                        border: '1px solid var(--border-card)',
-                        color: 'var(--text-muted)',
-                      }}
-                    >
-                      <Tag size={12} style={{ color: 'var(--teal-500)' }} />
-                      {rec.category || 'General'}
-                    </span>
+                    {/* Description */}
+                    <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                      {rec.message}
+                    </p>
+
+                    {/* Action CTA */}
+                    {rec.action && !isDn && (
+                      <div style={{
+                        display: 'flex', alignItems: 'flex-start', gap: '8px',
+                        padding: '10px 13px', borderRadius: '11px',
+                        background: p.action.bg, border: `1px solid ${p.action.border}`,
+                        marginBottom: '10px',
+                      }}>
+                        <ArrowRight size={14} style={{ color: p.action.color, flexShrink: 0, marginTop: '2px' }} />
+                        <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                          <span style={{ color: p.action.color }}>Do this: </span>{rec.action}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Footer: category + mark-done */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                      {rec.category && (
+                        <span style={{
+                          fontSize: '11px', fontWeight: 700,
+                          padding: '3px 10px', borderRadius: '999px',
+                          background: 'var(--bg-subtle)', border: '1px solid var(--border-card)',
+                          color: 'var(--text-faint)',
+                        }}>
+                          {emoji} {rec.category}
+                        </span>
+                      )}
+                      <button
+                        className="rc-done-btn"
+                        onClick={() => toggleDone(i)}
+                        title={isDn ? 'Click to mark as not done' : 'Click when you have acted on this tip'}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '6px',
+                          fontSize: '12px', fontWeight: 800,
+                          padding: '6px 14px', borderRadius: '8px',
+                          border: `1px solid ${isDn ? 'rgba(34,197,94,0.40)' : 'var(--border-card)'}`,
+                          background: isDn ? 'rgba(34,197,94,0.14)' : 'var(--bg-subtle)',
+                          color: isDn ? '#22c55e' : '#9ca3af',
+                          cursor: 'pointer',
+                          transition: 'all 0.18s ease',
+                          letterSpacing: '0.01em',
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.background = isDn
+                            ? 'rgba(34,197,94,0.22)'
+                            : 'rgba(13,148,136,0.10)';
+                          e.currentTarget.style.color = isDn ? '#22c55e' : 'var(--teal-500)';
+                          e.currentTarget.style.borderColor = isDn
+                            ? 'rgba(34,197,94,0.55)'
+                            : 'rgba(13,148,136,0.35)';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.background = isDn ? 'rgba(34,197,94,0.14)' : 'var(--bg-subtle)';
+                          e.currentTarget.style.color = isDn ? '#22c55e' : '#9ca3af';
+                          e.currentTarget.style.borderColor = isDn ? 'rgba(34,197,94,0.40)' : 'var(--border-card)';
+                        }}
+                      >
+                        <CheckCircle size={13} />
+                        {isDn ? 'Completed ✓' : 'Mark as done'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-
-      {/* Decorative blob */}
-      <div
-        className="absolute -bottom-10 -right-10 w-40 h-40 rounded-full blur-3xl opacity-[0.08] pointer-events-none"
-        style={{ background: 'var(--teal-400)' }}
-      />
-    </div>
+    </>
   );
 };
 

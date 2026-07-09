@@ -1,26 +1,41 @@
 import React, { useState } from 'react';
 import axios from '../api/axios';
-import { Upload, FileText, Image as ImageIcon, Loader2, CheckCircle, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import {
+  Upload, FileText, Image as ImageIcon, Loader2,
+  CheckCircle, RefreshCw, Sparkles, AlertCircle, ScanLine, Zap,
+} from 'lucide-react';
 import ExpenseForm from '../components/ExpenseForm';
 import { Link } from 'react-router-dom';
 
 const ReceiptScanner = () => {
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState('');
+  const { isDark } = useTheme();
+  const [file,     setFile]     = useState(null);
+  const [preview,  setPreview]  = useState('');
   const [scanning, setScanning] = useState(false);
-  const [error, setError] = useState('');
-  const [ocrData, setOcrData] = useState(null);
-  const [saved, setSaved] = useState(false);
+  const [error,    setError]    = useState('');
+  const [ocrData,  setOcrData]  = useState(null);
+  const [saved,    setSaved]    = useState(false);
+  const [dragging, setDragging] = useState(false);
 
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      setPreview(URL.createObjectURL(selectedFile));
-      setOcrData(null);
-      setError('');
-      setSaved(false);
-    }
+    const f = e.target.files[0];
+    if (f) pick(f);
+  };
+
+  const pick = (f) => {
+    setFile(f);
+    setPreview(URL.createObjectURL(f));
+    setOcrData(null);
+    setError('');
+    setSaved(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const f = e.dataTransfer.files[0];
+    if (f) pick(f);
   };
 
   const handleScan = async () => {
@@ -47,163 +62,483 @@ const ReceiptScanner = () => {
     setError('');
   };
 
-  return (
-    <div className="w-full pb-12">
-      {/* Page Header */}
-      <div className="mb-10">
-        <h1 className="text-4xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Receipt Scanner</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium text-lg">
-          Use AI to automatically extract expense details from your receipts.
-        </p>
-      </div>
-
-      {/* ── Saved Success State ── */}
-      {saved ? (
-        <div className="bg-white dark:bg-slate-800/60 rounded-3xl p-12 shadow-sm border border-slate-100 dark:border-slate-700/50 text-center max-w-2xl mx-auto mt-12">
-          <div className="w-28 h-28 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner border border-emerald-100 dark:border-emerald-800/50 relative">
-            <div className="absolute inset-0 bg-emerald-400 rounded-full blur-2xl opacity-20 dark:opacity-10"></div>
-            <CheckCircle size={56} className="relative z-10" />
+  /* ── Saved state ── */
+  if (saved) {
+    return (
+      <div style={{ width: '100%', paddingBottom: '48px' }}>
+        <PageHeader />
+        <div style={{
+          maxWidth: '560px', margin: '48px auto 0',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-card)',
+          borderRadius: '28px',
+          padding: '56px 40px',
+          textAlign: 'center',
+          boxShadow: '0 8px 32px rgba(13,148,136,0.10)',
+        }}>
+          <div style={{
+            width: '96px', height: '96px', borderRadius: '50%',
+            background: 'rgba(16,185,129,0.12)',
+            border: '2px solid rgba(16,185,129,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 28px',
+          }}>
+            <CheckCircle size={48} style={{ color: '#10b981' }} />
           </div>
-          <h2 className="text-4xl font-black text-slate-800 dark:text-slate-100 mb-4 tracking-tight">Expense Saved!</h2>
-          <p className="text-slate-500 dark:text-slate-400 mb-10 font-semibold text-lg leading-relaxed">
-            Your receipt has been successfully digitized and safely stored in your expenses.
+          <h2 style={{
+            margin: '0 0 12px', fontSize: '32px', fontWeight: 900,
+            color: 'var(--text-primary)', letterSpacing: '-0.02em',
+          }}>
+            Expense Saved!
+          </h2>
+          <p style={{
+            margin: '0 0 36px', fontSize: '15px', fontWeight: 500,
+            color: 'var(--text-muted)', lineHeight: 1.6,
+          }}>
+            Your receipt has been successfully digitized and stored in your expenses.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link
-              to="/expenses"
-              className="px-8 py-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold rounded-2xl transition-all"
-            >
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/expenses" style={{
+              display: 'inline-flex', alignItems: 'center', gap: '8px',
+              padding: '12px 24px', borderRadius: '14px', fontWeight: 700, fontSize: '14px',
+              background: 'var(--bg-subtle)', color: 'var(--text-primary)',
+              border: '1px solid var(--border-card)', textDecoration: 'none',
+              transition: 'all 0.2s',
+            }}>
               View All Expenses
             </Link>
-            <button
-              onClick={resetScanner}
-              className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-3 shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5"
-            >
-              <RefreshCw size={22} /> Scan Another
+            <button onClick={resetScanner} style={{
+              display: 'inline-flex', alignItems: 'center', gap: '8px',
+              padding: '12px 24px', borderRadius: '14px', fontWeight: 700, fontSize: '14px',
+              background: 'linear-gradient(135deg, var(--teal-600), var(--teal-500))',
+              color: '#fff', border: 'none', cursor: 'pointer',
+              boxShadow: '0 6px 20px rgba(13,148,136,0.35)',
+              transition: 'all 0.2s',
+            }}>
+              <RefreshCw size={18} /> Scan Another
             </button>
           </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      </div>
+    );
+  }
 
-          {/* ── Upload Section ── */}
-          <div className="space-y-6">
-            <div className="bg-white dark:bg-slate-800/60 rounded-3xl p-8 md:p-10 shadow-sm border border-slate-100 dark:border-slate-700/50 h-full flex flex-col group">
-              <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 mb-8 flex items-center gap-3 tracking-tight">
-                <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-xl shadow-inner border border-indigo-100/50 dark:border-indigo-800/30">
-                  <ImageIcon size={24} />
+  return (
+    <>
+      <style>{`
+        @keyframes scan-line {
+          0%   { transform: translateY(-100%); opacity: 0; }
+          10%  { opacity: 1; }
+          90%  { opacity: 1; }
+          100% { transform: translateY(600%); opacity: 0; }
+        }
+        @keyframes rs-spin { to { transform: rotate(360deg); } }
+        @keyframes rs-pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+        @keyframes rs-float {
+          0%,100% { transform: translateY(0); }
+          50%     { transform: translateY(-8px); }
+        }
+        .drop-zone { transition: all 0.2s ease; }
+        .drop-zone:hover, .drop-zone.dragging {
+          border-color: var(--teal-500) !important;
+          background: rgba(13,148,136,0.05) !important;
+        }
+        .scan-btn:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 28px rgba(13,148,136,0.45) !important;
+        }
+        .scan-btn:active:not(:disabled) { transform: translateY(0); }
+        .reset-btn:hover { background: rgba(239,68,68,0.10) !important; color: #ef4444 !important; }
+      `}</style>
+
+      <div style={{ width: '100%', paddingBottom: '48px' }}>
+        <PageHeader />
+
+        {/* ── Feature chips ── */}
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '28px',
+        }}>
+          {[
+            { icon: <Zap size={13} />,      label: 'AI-Powered OCR'         },
+            { icon: <ScanLine size={13} />, label: 'JPG · PNG · PDF'        },
+            { icon: <Sparkles size={13} />, label: 'Auto-fills expense form' },
+          ].map((c) => (
+            <span key={c.label} style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '5px 14px', borderRadius: '999px',
+              background: 'rgba(13,148,136,0.10)',
+              border: '1px solid rgba(13,148,136,0.20)',
+              color: 'var(--teal-600)',
+              fontSize: '12px', fontWeight: 700,
+            }}>
+              {c.icon} {c.label}
+            </span>
+          ))}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+
+          {/* ── LEFT: Upload panel ── */}
+          <div className="cashly-card" style={{ borderRadius: '24px', padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+            {/* Card title */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '38px', height: '38px', borderRadius: '11px',
+                background: 'rgba(13,148,136,0.12)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--teal-600)',
+              }}>
+                <ImageIcon size={20} />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: '16px', color: 'var(--text-primary)' }}>
+                  Image Upload
+                </p>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                  Drop or select your receipt
+                </p>
+              </div>
+            </div>
+
+            {/* Drop zone / preview */}
+            {!preview ? (
+              <label
+                className={`drop-zone ${dragging ? 'dragging' : ''}`}
+                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={handleDrop}
+                style={{
+                  flex: 1, minHeight: '320px',
+                  border: `2px dashed ${dragging ? 'var(--teal-500)' : 'rgba(13,148,136,0.35)'}`,
+                  borderRadius: '18px',
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', padding: '32px',
+                  background: dragging
+                    ? 'rgba(13,148,136,0.06)'
+                    : isDark ? 'rgba(13,148,136,0.03)' : 'rgba(13,148,136,0.02)',
+                  textAlign: 'center',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <div style={{
+                  width: '72px', height: '72px', borderRadius: '20px',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-card)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: '20px',
+                  boxShadow: '0 4px 16px rgba(13,148,136,0.10)',
+                  animation: 'rs-float 3s ease-in-out infinite',
+                }}>
+                  <Upload size={30} style={{ color: 'var(--teal-500)' }} />
                 </div>
-                Image Upload
-              </h3>
-
-              {/* Drop zone */}
-              {!preview ? (
-                <label className="flex-1 border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-indigo-500 dark:hover:border-indigo-500 bg-slate-50 dark:bg-slate-900/40 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-all duration-300 rounded-[2rem] p-10 flex flex-col items-center justify-center cursor-pointer group/upload min-h-[350px]">
-                  <div className="w-24 h-24 bg-white dark:bg-slate-800 rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-slate-200 dark:border-slate-700 group-hover/upload:border-indigo-200 dark:group-hover/upload:border-indigo-700 group-hover/upload:scale-110 group-hover/upload:-rotate-6 transition-transform duration-300">
-                    <Upload size={36} className="text-slate-400 dark:text-slate-500 group-hover/upload:text-indigo-600 dark:group-hover/upload:text-indigo-400 transition-colors" />
+                <p style={{ margin: '0 0 6px', fontWeight: 800, fontSize: '16px', color: 'var(--text-primary)' }}>
+                  Click or drag receipt here
+                </p>
+                <p style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: 500, color: '#9ca3af' }}>
+                  Drop a file anywhere in this box to upload
+                </p>
+                <span style={{
+                  display: 'inline-block',
+                  padding: '4px 14px', borderRadius: '999px',
+                  background: 'rgba(13,148,136,0.10)',
+                  border: '1px solid rgba(13,148,136,0.22)',
+                  fontSize: '12px', fontWeight: 700,
+                  color: 'var(--teal-600)',
+                }}>
+                  Supports JPG, PNG, PDF · Max 5MB
+                </span>
+                <input type="file" style={{ display: 'none' }} accept="image/*,.pdf" onChange={handleFileChange} />
+              </label>
+            ) : (
+              <div style={{
+                flex: 1, minHeight: '320px', position: 'relative',
+                borderRadius: '18px', overflow: 'hidden',
+                border: '1px solid var(--border-card)',
+                background: 'var(--bg-subtle)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <img
+                  src={preview} alt="Receipt Preview"
+                  style={{ maxHeight: '400px', objectFit: 'contain', width: '100%' }}
+                />
+                {/* Scan line animation when scanning */}
+                {scanning && (
+                  <div style={{
+                    position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none',
+                  }}>
+                    <div style={{
+                      position: 'absolute', left: 0, right: 0, height: '3px',
+                      background: 'linear-gradient(90deg, transparent, var(--teal-400), transparent)',
+                      boxShadow: '0 0 16px 4px rgba(13,148,136,0.5)',
+                      animation: 'scan-line 2s ease-in-out infinite',
+                    }} />
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'rgba(13,148,136,0.06)',
+                    }} />
                   </div>
-                  <p className="text-slate-800 dark:text-slate-100 font-black mb-2 text-xl tracking-tight">Click or drag receipt here</p>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm font-bold bg-slate-200/50 dark:bg-slate-700/50 px-4 py-1.5 rounded-full mt-2">
-                    Supports JPG, PNG, PDF (Max 5MB)
-                  </p>
-                  <input type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileChange} />
-                </label>
-              ) : (
-                /* Image preview */
-                <div className="flex-1 relative rounded-[2rem] overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/60 flex items-center justify-center min-h-[350px] group/preview shadow-inner">
-                  <img src={preview} alt="Receipt Preview" className="max-h-[450px] object-contain w-full" />
-                  <div className="absolute inset-0 bg-slate-900/10 dark:bg-black/20 opacity-0 group-hover/preview:opacity-100 transition-opacity"></div>
+                )}
+                {/* Remove button */}
+                {!scanning && (
                   <button
+                    className="reset-btn"
                     onClick={resetScanner}
-                    className="absolute top-4 right-4 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-900/40 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 w-10 h-10 flex items-center justify-center rounded-full shadow-lg transition-colors z-10 font-bold border border-slate-200 dark:border-slate-700"
                     title="Remove Image"
+                    style={{
+                      position: 'absolute', top: '12px', right: '12px',
+                      width: '34px', height: '34px', borderRadius: '50%',
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border-card)',
+                      color: 'var(--text-muted)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', fontWeight: 700, fontSize: '16px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                      transition: 'all 0.15s ease',
+                    }}
                   >
                     ✕
                   </button>
-                </div>
-              )}
+                )}
+              </div>
+            )}
 
-              {/* Error */}
-              {error && (
-                <div className="mt-8 p-4 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 text-sm font-bold rounded-2xl border border-rose-100 dark:border-rose-800/50 flex items-center gap-3 shadow-sm">
-                  <AlertCircle size={20} className="shrink-0 text-rose-500" /> {error}
-                </div>
-              )}
+            {/* Error */}
+            {error && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '13px 16px', borderRadius: '14px',
+                background: 'rgba(239,68,68,0.10)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                color: '#ef4444', fontSize: '13px', fontWeight: 700,
+              }}>
+                <AlertCircle size={18} style={{ flexShrink: 0 }} /> {error}
+              </div>
+            )}
 
-              {/* Scan button */}
-              {preview && !ocrData && (
-                <button
-                  onClick={handleScan}
-                  disabled={scanning}
-                  className="w-full mt-8 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 dark:disabled:bg-indigo-800 text-white font-bold rounded-2xl shadow-xl shadow-indigo-500/30 transition-all flex items-center justify-center gap-3 hover:-translate-y-0.5"
-                >
-                  {scanning ? (
-                    <><Loader2 size={24} className="animate-spin" /> Analyzing Receipt with AI...</>
-                  ) : (
-                    <><FileText size={24} /> Scan Receipt via OCR</>
-                  )}
-                </button>
-              )}
-            </div>
+            {/* Scan button */}
+            {preview && !ocrData && (
+              <button
+                className="scan-btn"
+                onClick={handleScan}
+                disabled={scanning}
+                style={{
+                  width: '100%', padding: '16px',
+                  borderRadius: '16px', border: 'none',
+                  background: scanning
+                    ? 'rgba(13,148,136,0.5)'
+                    : 'linear-gradient(135deg, var(--teal-600), var(--teal-500))',
+                  color: '#fff', fontWeight: 800, fontSize: '15px',
+                  cursor: scanning ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                  boxShadow: scanning ? 'none' : '0 6px 20px rgba(13,148,136,0.35)',
+                  transition: 'all 0.2s ease',
+                  fontFamily: 'Inter, sans-serif',
+                }}
+              >
+                {scanning ? (
+                  <>
+                    <Loader2 size={20} style={{ animation: 'rs-spin 0.7s linear infinite' }} />
+                    Analyzing Receipt with AI…
+                  </>
+                ) : (
+                  <>
+                    <ScanLine size={20} /> Scan Receipt via OCR
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
-          {/* ── Results Section ── */}
-          <div className="space-y-6">
+          {/* ── RIGHT: Results panel ── */}
+          <div>
 
-            {/* Idle state */}
+            {/* Idle */}
             {!ocrData && !scanning && (
-              <div className="bg-white dark:bg-slate-800/60 rounded-3xl p-10 shadow-sm border border-slate-100 dark:border-slate-700/50 h-full flex flex-col items-center justify-center text-center min-h-[400px]">
-                <div className="w-28 h-28 bg-indigo-50 dark:bg-indigo-900/30 rounded-[2rem] flex items-center justify-center mb-8 shadow-inner border border-indigo-100/50 dark:border-indigo-800/30">
-                  <Sparkles size={48} className="text-indigo-400 dark:text-indigo-500" />
+              <div className="cashly-card" style={{
+                borderRadius: '24px', padding: '28px',
+                minHeight: '420px',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                textAlign: 'center',
+              }}>
+                {/* Animated icon */}
+                <div style={{
+                  width: '100px', height: '100px', borderRadius: '28px',
+                  background: 'linear-gradient(135deg, rgba(13,148,136,0.15), rgba(13,148,136,0.05))',
+                  border: '1px solid rgba(13,148,136,0.20)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: '24px',
+                  animation: 'rs-float 3s ease-in-out infinite',
+                }}>
+                  <Sparkles size={44} style={{ color: 'var(--teal-500)' }} />
                 </div>
-                <h3 className="text-3xl font-black text-slate-800 dark:text-slate-100 mb-4 tracking-tight">Awaiting Receipt</h3>
-                <p className="text-slate-500 dark:text-slate-400 font-semibold max-w-sm leading-relaxed text-lg">
+                <h3 style={{
+                  margin: '0 0 10px', fontSize: '24px', fontWeight: 900,
+                  color: 'var(--text-primary)', letterSpacing: '-0.01em',
+                }}>
+                  Awaiting Receipt
+                </h3>
+                <p style={{
+                  margin: '0 0 28px', fontSize: '14px', fontWeight: 500,
+                  color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '280px',
+                }}>
                   Upload an image and click scan. Our AI will automatically extract the merchant, total amount, and date.
                 </p>
-              </div>
-            )}
 
-            {/* Scanning / loading state */}
-            {scanning && (
-              <div className="bg-white dark:bg-slate-800/60 rounded-3xl p-10 shadow-sm border border-slate-100 dark:border-slate-700/50 h-full flex flex-col items-center justify-center text-center min-h-[400px]">
-                <div className="relative w-32 h-32 mb-10">
-                  <div className="absolute inset-0 border-4 border-slate-100 dark:border-slate-700 rounded-full"></div>
-                  <div className="absolute inset-0 border-4 border-indigo-600 dark:border-indigo-500 rounded-full border-t-transparent animate-spin"></div>
-                  <FileText size={48} className="absolute inset-0 m-auto text-indigo-600 dark:text-indigo-400 animate-pulse" />
+                {/* Step hints */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '280px' }}>
+                  {[
+                    { n: '1', text: 'Upload your receipt image' },
+                    { n: '2', text: 'Click "Scan Receipt via OCR"' },
+                    { n: '3', text: 'Review & save the expense' },
+                  ].map((s) => (
+                    <div key={s.n} style={{
+                      display: 'flex', alignItems: 'center', gap: '12px',
+                      padding: '10px 14px', borderRadius: '12px',
+                      background: 'var(--bg-subtle)',
+                      border: '1px solid var(--border-card)',
+                    }}>
+                      <div style={{
+                        width: '26px', height: '26px', borderRadius: '50%', flexShrink: 0,
+                        background: 'var(--teal-500)',
+                        color: '#ffffff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '12px', fontWeight: 900,
+                      }}>
+                        {s.n}
+                      </div>
+                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {s.text}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-                <h3 className="text-3xl font-black text-slate-800 dark:text-slate-100 mb-4 tracking-tight">Processing AI...</h3>
-                <p className="text-slate-500 dark:text-slate-400 font-semibold leading-relaxed max-w-sm text-lg">
-                  Running optical character recognition. This usually takes 2–5 seconds depending on the image size.
-                </p>
               </div>
             )}
 
-            {/* OCR results + form */}
+            {/* Scanning */}
+            {scanning && (
+              <div className="cashly-card" style={{
+                borderRadius: '24px', padding: '28px',
+                minHeight: '420px',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                textAlign: 'center',
+              }}>
+                <div style={{ position: 'relative', width: '100px', height: '100px', marginBottom: '28px' }}>
+                  {/* Outer ring */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    border: '3px solid var(--border-card)',
+                    borderRadius: '50%',
+                  }} />
+                  {/* Spinning ring */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    border: '3px solid transparent',
+                    borderTopColor: 'var(--teal-500)',
+                    borderRadius: '50%',
+                    animation: 'rs-spin 0.9s linear infinite',
+                  }} />
+                  {/* Center icon */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <ScanLine size={36} style={{ color: 'var(--teal-500)', animation: 'rs-pulse 1.5s ease-in-out infinite' }} />
+                  </div>
+                </div>
+                <h3 style={{
+                  margin: '0 0 10px', fontSize: '24px', fontWeight: 900,
+                  color: 'var(--text-primary)', letterSpacing: '-0.01em',
+                }}>
+                  Processing with AI…
+                </h3>
+                <p style={{
+                  margin: 0, fontSize: '14px', fontWeight: 500,
+                  color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: '260px',
+                }}>
+                  Running optical character recognition. This usually takes 2–5 seconds.
+                </p>
+
+                {/* Progress dots */}
+                <div style={{ display: 'flex', gap: '8px', marginTop: '28px' }}>
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} style={{
+                      width: '8px', height: '8px', borderRadius: '50%',
+                      background: 'var(--teal-500)',
+                      animation: `rs-pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+                    }} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* OCR Results */}
             {ocrData && (
-              <div className="bg-white dark:bg-slate-800/60 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700/50 overflow-hidden flex flex-col h-full">
-                {/* Gradient header */}
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 border-b border-indigo-700 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                  <h3 className="text-2xl font-black text-white flex items-center gap-3 relative z-10 tracking-tight">
-                    <CheckCircle size={28} className="text-indigo-200" /> Verification Needed
+              <div className="cashly-card" style={{
+                borderRadius: '24px', overflow: 'hidden',
+                display: 'flex', flexDirection: 'column',
+              }}>
+                {/* Teal header */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #065f46, #0d9488)',
+                  padding: '22px 28px',
+                  position: 'relative', overflow: 'hidden',
+                }}>
+                  <div style={{
+                    position: 'absolute', top: '-30px', right: '-30px',
+                    width: '120px', height: '120px', borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.07)', pointerEvents: 'none',
+                  }} />
+                  <h3 style={{
+                    margin: '0 0 4px', fontSize: '18px', fontWeight: 900,
+                    color: '#ffffff', letterSpacing: '-0.01em',
+                    display: 'flex', alignItems: 'center', gap: '10px', position: 'relative', zIndex: 1,
+                  }}>
+                    <CheckCircle size={22} style={{ color: '#a7f3d0' }} />
+                    Verification Needed
                   </h3>
-                  <p className="text-indigo-100 mt-2 font-medium leading-relaxed relative z-10">
-                    We've extracted the details below. Please verify, select a category, and save.
+                  <p style={{
+                    margin: 0, fontSize: '13px', fontWeight: 500,
+                    color: 'rgba(255,255,255,0.75)', position: 'relative', zIndex: 1,
+                  }}>
+                    Review the extracted details, select a category, and save.
                   </p>
                 </div>
 
-                {/* Form + raw text */}
-                <div className="p-8 flex-1 overflow-y-auto custom-scrollbar">
+                {/* Form */}
+                <div style={{ padding: '24px 28px', overflowY: 'auto' }}>
                   <ExpenseForm
                     initialData={{ ...ocrData.suggestedExpense, _id: null }}
                     onSuccess={() => setSaved(true)}
                   />
 
-                  <div className="mt-10 bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-6 border border-slate-200/60 dark:border-slate-700/50 shadow-inner">
-                    <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <FileText size={16} /> Raw Extracted Text
+                  {/* Raw text accordion */}
+                  <div style={{
+                    marginTop: '20px', padding: '16px',
+                    background: 'var(--bg-subtle)',
+                    borderRadius: '14px',
+                    border: '1px solid var(--border-card)',
+                  }}>
+                    <h4 style={{
+                      margin: '0 0 12px', fontSize: '11px', fontWeight: 800,
+                      color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em',
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                    }}>
+                      <FileText size={14} /> Raw Extracted Text
                     </h4>
-                    <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-400 font-mono h-40 overflow-y-auto whitespace-pre-wrap shadow-sm leading-relaxed">
+                    <div style={{
+                      padding: '14px', borderRadius: '10px',
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border-card)',
+                      fontSize: '11px', fontFamily: 'monospace',
+                      color: 'var(--text-muted)',
+                      maxHeight: '140px', overflowY: 'auto',
+                      whiteSpace: 'pre-wrap', lineHeight: 1.6,
+                    }}>
                       {ocrData.extractedText || 'No readable text found.'}
                     </div>
                   </div>
@@ -212,9 +547,23 @@ const ReceiptScanner = () => {
             )}
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 };
+
+const PageHeader = () => (
+  <div style={{ marginBottom: '24px' }}>
+    <h1 style={{
+      fontSize: '32px', fontWeight: 900, letterSpacing: '-0.02em',
+      color: 'var(--text-primary)', margin: 0,
+    }}>
+      Receipt Scanner
+    </h1>
+    <p style={{ marginTop: '6px', fontWeight: 500, fontSize: '15px', color: '#9ca3af' }}>
+      Use AI to automatically extract expense details from your receipts.
+    </p>
+  </div>
+);
 
 export default ReceiptScanner;

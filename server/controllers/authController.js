@@ -42,6 +42,7 @@ const registerUser = async (req, res) => {
         email: user.email,
         monthlyIncome: user.monthlyIncome,
         savingsGoal: user.savingsGoal,
+        currency: user.currency,
         token: generateToken(user._id)
       });
     } else {
@@ -73,6 +74,7 @@ const loginUser = async (req, res) => {
         email: user.email,
         monthlyIncome: user.monthlyIncome,
         savingsGoal: user.savingsGoal,
+        currency: user.currency,
         token: generateToken(user._id)
       });
     } else {
@@ -98,6 +100,7 @@ const getUserProfile = async (req, res) => {
         email: user.email,
         monthlyIncome: user.monthlyIncome,
         savingsGoal: user.savingsGoal,
+        currency: user.currency,
         createdAt: user.createdAt
       });
     } else {
@@ -125,6 +128,10 @@ const updateUserProfile = async (req, res) => {
       if (req.body.savingsGoal !== undefined) {
         user.savingsGoal = Number(req.body.savingsGoal) || 0;
       }
+      
+      if (req.body.currency !== undefined) {
+        user.currency = req.body.currency;
+      }
 
       const updatedUser = await user.save();
 
@@ -134,6 +141,7 @@ const updateUserProfile = async (req, res) => {
         email: updatedUser.email,
         monthlyIncome: updatedUser.monthlyIncome,
         savingsGoal: updatedUser.savingsGoal,
+        currency: updatedUser.currency,
       });
     } else {
       res.status(404).json({ message: 'User not found' });

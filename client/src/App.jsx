@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { SearchProvider } from './context/SearchContext';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -11,11 +12,13 @@ import AddExpense from './pages/AddExpense';
 import Analytics from './pages/Analytics';
 import ReceiptScanner from './pages/ReceiptScanner';
 import Profile from './pages/Profile';
+import Subscription from './pages/Subscription';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <ThemeProvider>
+      <SearchProvider>
       <AuthProvider>
         <Router>
           <Routes>
@@ -32,10 +35,12 @@ function App() {
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/receipt-scanner" element={<ReceiptScanner />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/upgrade" element={<Subscription />} />
             </Route>
           </Routes>
         </Router>
       </AuthProvider>
+      </SearchProvider>
     </ThemeProvider>
   );
 }

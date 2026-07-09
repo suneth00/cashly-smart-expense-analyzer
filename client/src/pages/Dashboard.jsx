@@ -2,430 +2,671 @@ import { useEffect, useState, useContext } from 'react';
 import axios from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import StatCard from '../components/StatCard';
 import ChartCard from '../components/ChartCard';
 import CategoryBreakdownCard from '../components/CategoryBreakdownCard';
-import MoneyHealthCard from '../components/MoneyHealthCard';
-import RecommendationsCard from '../components/RecommendationsCard';
-import { Wallet, TrendingUp, Tag, ArrowRight, Plus, Activity, Sparkles, Leaf } from 'lucide-react';
+import {
+  Wallet, TrendingUp, Tag, ArrowRight, Plus, Activity,
+  Sparkles, ScanLine, CheckCircle, AlertTriangle, Info,
+  CreditCard, Target, BookOpen, ChevronRight,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
-  AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  ReferenceLine
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
+import { formatCurrency } from '../utils/currencyUtils';
+
+/* ── helpers ── */
+const fmt = (n, currency, decimals = 2) => formatCurrency(n, currency, { decimals });
 
 const Dashboard = () => {
-  const { user } = useContext(AuthContext);
+  const { user }   = useContext(AuthContext);
   const { isDark } = useTheme();
-  const [data, setData] = useState(null);
+  const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error,   setError]   = useState('');
 
   useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        const res = await axios.get('/analytics/summary');
-        setData(res.data);
-      } catch {
-        setError('Failed to load dashboard data. Please make sure the backend is running.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAnalytics();
+    axios.get('/analytics/summary')
+      .then(r => setData(r.data))
+      .catch(() => setError('Failed to load dashboard data.'))
+      .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div
-          className="animate-spin rounded-full h-10 w-10 border-b-4"
-          style={{ borderColor: 'var(--teal-600)' }}
-        />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+      <div style={{
+        width: '40px', height: '40px', borderRadius: '50%',
+        border: '4px solid var(--border-card)',
+        borderTopColor: 'var(--teal-600)',
+        animation: 'db-spin 0.8s linear infinite',
+      }} />
+      <style>{`@keyframes db-spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
-  if (error) {
-    return (
-      <div
-        className="p-6 rounded-2xl text-center font-semibold"
-        style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca' }}
-      >
-        {error}
-      </div>
-    );
-  }
+  if (error) return (
+    <div style={{
+      padding: '20px 24px', borderRadius: '16px',
+      background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.25)',
+      color: '#ef4444', fontWeight: 600,
+    }}>{error}</div>
+  );
 
   if (!data) return null;
 
+  /* derived values */
+  const income       = user?.monthlyIncome || 0;
+  const savingsGoal  = user?.savingsGoal   || 0;
+  const monthly      = data.monthlySpending || 0;
+  const total        = data.totalExpenses   || 0;
+  const budgetUsed   = income > 0 ? Math.min(100, (monthly / income) * 100) : 0;
+  const budgetLeft   = Math.max(0, income - monthly);
+  const savedAmt     = Math.max(0, income - monthly);
+  const savingsPct   = savingsGoal > 0 ? Math.min(100, (savedAmt / savingsGoal) * 100) : 0;
+  const overBudget   = income > 0 && monthly > income;
+  const nearBudget   = income > 0 && monthly >= income * 0.8 && !overBudget;
+  const firstName    = user?.name?.split(' ')[0] || 'there';
+
+  /* greeting */
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  /* budget bar color */
+  const budgetColor = overBudget ? '#ef4444' : nearBudget ? '#f59e0b' : '#10b981';
+
+  /* "What to do next" steps */
+  const steps = [];
+  if (!income)      steps.push({ icon: '💰', text: 'Set your monthly income in Profile', to: '/profile', done: false });
+  if (!savingsGoal) steps.push({ icon: '🎯', text: 'Set a savings goal in Profile',       to: '/profile', done: false });
+  if (total === 0)  steps.push({ icon: '📝', text: 'Add your first expense',              to: '/add-expense', done: false });
+  else              steps.push({ icon: '✅', text: 'You\'re tracking expenses — great!',  to: '/expenses', done: true });
+  if (income && total > 0) steps.push({ icon: '📊', text: 'Check your AI insights in Analytics', to: '/analytics', done: false });
+
   return (
-    <div className="w-full space-y-6">
+    <>
+      <style>{`
+        @keyframes db-spin    { to { transform: rotate(360deg); } }
+        @keyframes db-float   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+        @keyframes db-fadeIn  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes db-grow    { from{width:0} to{width:var(--target-w)} }
+        @keyframes gradientShift {
+          0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%}
+        }
+        .db-card  { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+        .db-card:hover { transform: translateY(-2px); }
+        .db-action { transition: all 0.18s ease; }
+        .db-action:hover { transform: translateY(-2px); filter: brightness(1.08); }
+        .db-tx:hover { background: var(--bg-subtle) !important; }
+        .db-step:hover { border-color: var(--teal-500) !important; background: rgba(13,148,136,0.05) !important; }
+      `}</style>
 
-      {/* ── Hero Section ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div style={{ width: '100%', paddingBottom: '48px', animation: 'db-fadeIn 0.3s ease' }}>
 
-        {/* Welcome card — animated dark teal gradient */}
-        <div
-          className="lg:col-span-2 hero-gradient rounded-2xl p-6 md:p-8 relative overflow-hidden text-white"
-          style={{ boxShadow: '0 8px 32px rgba(13,148,136,0.30)' }}
-        >
-          <div className="relative z-10">
-            <div
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4"
-              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}
-            >
-              <Sparkles size={12} className="text-lime-300" /> Overview
-            </div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight mb-2">
-              Welcome back, {user?.name?.split(' ')[0] || 'User'}! 👋
-            </h1>
-            <p className="text-teal-100 text-sm md:text-base font-medium max-w-md mb-6 opacity-90">
-              Track your spending, hit your savings goals, and improve your money habits today.
+        {/* ════════════════════════════════════════
+            SECTION 1 — WELCOME HERO
+        ════════════════════════════════════════ */}
+        <div style={{
+          background: 'linear-gradient(135deg, #0d4f4f, #0d9488, #0f766e, #134e4a)',
+          backgroundSize: '300% 300%',
+          animation: 'gradientShift 8s ease infinite',
+          borderRadius: '24px',
+          padding: '32px',
+          color: '#fff',
+          marginBottom: '20px',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(13,148,136,0.30)',
+        }}>
+          {/* Blobs */}
+          <div style={{
+            position:'absolute',top:'-60px',right:'-60px',
+            width:'220px',height:'220px',borderRadius:'50%',
+            background:'rgba(255,255,255,0.06)',pointerEvents:'none',
+          }}/>
+          <div style={{
+            position:'absolute',bottom:'-40px',left:'40%',
+            width:'160px',height:'160px',borderRadius:'50%',
+            background:'rgba(163,230,53,0.10)',pointerEvents:'none',
+          }}/>
+
+          <div style={{ position:'relative', zIndex:1 }}>
+            {/* Greeting */}
+            <p style={{ margin:'0 0 4px', fontSize:'13px', fontWeight:700, opacity:0.75, letterSpacing:'0.04em' }}>
+              {greeting} ☀️
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                to="/add-expense"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm hover:-translate-y-0.5 transition-all"
-                style={{
-                  background: '#ffffff',
-                  color: 'var(--teal-700)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                }}
-              >
-                <Plus size={16} /> Add Expense
-              </Link>
-              <Link
-                to="/receipt-scanner"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-colors"
-                style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.22)', color: '#fff' }}
-              >
-                <Leaf size={15} /> Scan Receipt
-              </Link>
+            <h1 style={{ margin:'0 0 8px', fontSize:'28px', fontWeight:900, letterSpacing:'-0.02em' }}>
+              Welcome back, {firstName}! 👋
+            </h1>
+            <p style={{ margin:'0 0 24px', fontSize:'14px', fontWeight:500, opacity:0.85, maxWidth:'460px', lineHeight:1.6 }}>
+              Here's a snapshot of your finances today. Track spending, stay on budget, and reach your goals.
+            </p>
+
+            {/* Quick Actions */}
+            <div style={{ display:'flex', flexWrap:'wrap', gap:'10px' }}>
+              {[
+                { to:'/add-expense',      icon:<Plus size={15}/>,    label:'Add Expense',    primary:true  },
+                { to:'/receipt-scanner',  icon:<ScanLine size={15}/>, label:'Scan Receipt',   primary:false },
+                { to:'/expenses',         icon:<CreditCard size={15}/>,label:'View Expenses', primary:false },
+              ].map(a => (
+                <Link key={a.to} to={a.to} className="db-action" style={{
+                  display:'inline-flex', alignItems:'center', gap:'7px',
+                  padding:'10px 20px', borderRadius:'12px',
+                  fontWeight:700, fontSize:'13px', textDecoration:'none',
+                  background: a.primary ? '#ffffff' : 'rgba(255,255,255,0.14)',
+                  color:      a.primary ? 'var(--teal-700)' : '#ffffff',
+                  border:     a.primary ? 'none' : '1px solid rgba(255,255,255,0.22)',
+                  boxShadow:  a.primary ? '0 4px 12px rgba(0,0,0,0.18)' : 'none',
+                }}>
+                  {a.icon} {a.label}
+                </Link>
+              ))}
             </div>
           </div>
-          {/* Decorative blobs */}
-          <div className="absolute -right-16 -top-16 w-56 h-56 bg-teal-400 rounded-full mix-blend-screen blur-3xl opacity-25 pointer-events-none" />
-          <div className="absolute right-8 -bottom-16 w-44 h-44 rounded-full mix-blend-screen blur-3xl opacity-20 pointer-events-none" style={{ background: '#84cc16' }} />
         </div>
 
-        {/* Savings Goal card */}
-        <div
-          className="lg:col-span-1 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden flex flex-col justify-between"
-          style={{
-            background: 'linear-gradient(135deg, #065f46, #0d9488)',
-            boxShadow: '0 8px 28px rgba(13,148,136,0.28)',
-          }}
-        >
-          <div className="relative z-10">
-            <p className="text-xs font-bold uppercase tracking-widest mb-2 opacity-70">Savings Goal</p>
-            <p className="text-4xl font-black tracking-tight">
-              ${(user?.savingsGoal || 0).toLocaleString()}
-            </p>
-          </div>
-          <div
-            className="relative z-10 mt-6 rounded-2xl p-4"
-            style={{ background: 'rgba(0,0,0,0.12)', border: '1px solid rgba(255,255,255,0.12)' }}
-          >
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-xl shrink-0" style={{ background: 'rgba(255,255,255,0.18)' }}>
-                <Activity size={18} />
+        {/* ════════════════════════════════════════
+            SECTION 2 — BUDGET OVERVIEW (most important for beginners)
+        ════════════════════════════════════════ */}
+        <div style={{
+          display:'grid', gridTemplateColumns:'1fr 1fr',
+          gap:'16px', marginBottom:'20px',
+        }}>
+
+          {/* Monthly Budget Card */}
+          <div className="db-card cashly-card" style={{ borderRadius:'20px', padding:'24px' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'6px' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                <div style={{
+                  width:'32px',height:'32px',borderRadius:'10px',
+                  background:'rgba(13,148,136,0.12)',
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                  color:'var(--teal-600)',
+                }}>
+                  <Activity size={16}/>
+                </div>
+                <div>
+                  <p style={{ margin:0, fontWeight:800, fontSize:'14px', color:'var(--text-primary)' }}>
+                    Monthly Budget
+                  </p>
+                  <p style={{ margin:0, fontSize:'11px', color:'#9ca3af', fontWeight:600 }}>
+                    How much you've spent this month
+                  </p>
+                </div>
               </div>
-              <p className="text-sm font-medium leading-snug opacity-90">
-                Keep spending below your monthly income to hit this goal!
+              {overBudget && (
+                <span style={{
+                  display:'flex',alignItems:'center',gap:'4px',
+                  padding:'3px 10px',borderRadius:'999px',
+                  background:'rgba(239,68,68,0.12)',border:'1px solid rgba(239,68,68,0.25)',
+                  color:'#ef4444',fontSize:'11px',fontWeight:700,
+                }}>
+                  <AlertTriangle size={11}/> Over budget
+                </span>
+              )}
+            </div>
+
+            {/* Big numbers */}
+            <div style={{ display:'flex', alignItems:'baseline', gap:'8px', margin:'16px 0 4px' }}>
+              <span style={{ fontSize:'32px', fontWeight:900, color:'var(--text-primary)', letterSpacing:'-0.02em' }}>
+                {fmt(monthly, user?.currency)}
+              </span>
+              {income > 0 && (
+                <span style={{ fontSize:'14px', fontWeight:600, color:'var(--text-muted)' }}>
+                  of {fmt(income, user?.currency, 0)} income
+                </span>
+              )}
+            </div>
+
+            {/* Progress bar */}
+            {income > 0 ? (
+              <>
+                <div style={{
+                  height:'10px',borderRadius:'999px',
+                  background:'var(--bg-subtle)',
+                  marginBottom:'8px',overflow:'hidden',
+                }}>
+                  <div style={{
+                    height:'100%',borderRadius:'999px',
+                    width:`${budgetUsed}%`,
+                    background: budgetColor,
+                    transition:'width 0.8s ease',
+                    boxShadow:`0 0 8px ${budgetColor}66`,
+                  }}/>
+                </div>
+                <div style={{ display:'flex', justifyContent:'space-between' }}>
+                  <p style={{ margin:0, fontSize:'12px', fontWeight:600, color: budgetColor }}>
+                    {budgetUsed.toFixed(0)}% used
+                  </p>
+                  <p style={{ margin:0, fontSize:'12px', fontWeight:600, color:'var(--text-muted)' }}>
+                    {fmt(budgetLeft, user?.currency, 0)} left
+                  </p>
+                </div>
+              </>
+            ) : (
+              <Link to="/profile" style={{
+                display:'inline-flex',alignItems:'center',gap:'5px',
+                marginTop:'8px',fontSize:'12px',fontWeight:700,
+                color:'var(--teal-600)',textDecoration:'none',
+              }}>
+                <Info size={13}/> Set your income in Profile to track budget
+              </Link>
+            )}
+          </div>
+
+          {/* Savings Goal Card */}
+          <div className="db-card cashly-card" style={{ borderRadius:'20px', padding:'24px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'6px' }}>
+              <div style={{
+                width:'32px',height:'32px',borderRadius:'10px',
+                background:'rgba(132,204,22,0.12)',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                color:'#84cc16',
+              }}>
+                <Target size={16}/>
+              </div>
+              <div>
+                <p style={{ margin:0, fontWeight:800, fontSize:'14px', color:'var(--text-primary)' }}>
+                  Savings Goal
+                </p>
+                <p style={{ margin:0, fontSize:'11px', color:'#9ca3af', fontWeight:600 }}>
+                  How close you are to your savings target
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display:'flex', alignItems:'baseline', gap:'8px', margin:'16px 0 4px' }}>
+              <span style={{ fontSize:'32px', fontWeight:900, color:'var(--text-primary)', letterSpacing:'-0.02em' }}>
+                {fmt(savedAmt, user?.currency, 0)}
+              </span>
+              {savingsGoal > 0 && (
+                <span style={{ fontSize:'14px', fontWeight:600, color:'var(--text-muted)' }}>
+                  of {fmt(savingsGoal, user?.currency, 0)} goal
+                </span>
+              )}
+            </div>
+
+            {savingsGoal > 0 ? (
+              <>
+                <div style={{
+                  height:'10px',borderRadius:'999px',
+                  background:'var(--bg-subtle)',
+                  marginBottom:'8px',overflow:'hidden',
+                }}>
+                  <div style={{
+                    height:'100%',borderRadius:'999px',
+                    width:`${savingsPct}%`,
+                    background:'linear-gradient(90deg, #84cc16, #a3e635)',
+                    transition:'width 0.8s ease',
+                    boxShadow:'0 0 8px rgba(132,204,22,0.4)',
+                  }}/>
+                </div>
+                <div style={{ display:'flex', justifyContent:'space-between' }}>
+                  <p style={{ margin:0, fontSize:'12px', fontWeight:600, color:'#84cc16' }}>
+                    {savingsPct.toFixed(0)}% achieved
+                  </p>
+                  {savedAmt >= savingsGoal && (
+                    <p style={{ margin:0, fontSize:'12px', fontWeight:700, color:'#10b981', display:'flex',alignItems:'center',gap:'4px' }}>
+                      <CheckCircle size={12}/> Goal reached! 🎉
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <Link to="/profile" style={{
+                display:'inline-flex',alignItems:'center',gap:'5px',
+                marginTop:'8px',fontSize:'12px',fontWeight:700,
+                color:'#84cc16',textDecoration:'none',
+              }}>
+                <Info size={13}/> Set a savings goal in Profile
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* ════════════════════════════════════════
+            SECTION 3 — SIMPLE STAT CARDS
+        ════════════════════════════════════════ */}
+        <div style={{
+          display:'grid',gridTemplateColumns:'repeat(4,1fr)',
+          gap:'14px', marginBottom:'20px',
+        }}>
+          {[
+            {
+              icon:<Wallet size={18}/>,
+              label:'Total Spent (Ever)',
+              value: fmt(total, user?.currency),
+              sub:'All your recorded expenses',
+              accent:'var(--teal-600)',
+              bg:'rgba(13,148,136,0.10)',
+            },
+            {
+              icon:<TrendingUp size={18}/>,
+              label:'Spent This Month',
+              value: fmt(monthly, user?.currency),
+              sub: income > 0 ? `${((monthly/income)*100).toFixed(0)}% of your income` : 'No income set',
+              accent: overBudget ? '#ef4444' : 'var(--teal-500)',
+              bg: overBudget ? 'rgba(239,68,68,0.10)' : 'rgba(13,148,136,0.10)',
+            },
+            {
+              icon:<Tag size={18}/>,
+              label:'Biggest Spending Area',
+              value: data.highestSpendingCategory || 'None yet',
+              sub:'Your most frequent category',
+              accent:'#f59e0b',
+              bg:'rgba(245,158,11,0.10)',
+            },
+            {
+              icon:<Activity size={18}/>,
+              label:'Monthly Income',
+              value: income > 0 ? fmt(income, user?.currency, 0) : 'Not set',
+              sub: income > 0 ? 'Your set monthly income' : 'Go to Profile → set income',
+              accent:'#10b981',
+              bg:'rgba(16,185,129,0.10)',
+            },
+          ].map((s,i) => (
+            <div key={i} className="db-card cashly-card" style={{ borderRadius:'18px', padding:'18px' }}>
+              <div style={{
+                width:'34px',height:'34px',borderRadius:'10px',
+                background:s.bg,color:s.accent,
+                display:'flex',alignItems:'center',justifyContent:'center',
+                marginBottom:'12px',
+              }}>
+                {s.icon}
+              </div>
+              <p style={{ margin:'0 0 4px', fontSize:'11px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'0.06em' }}>
+                {s.label}
+              </p>
+              <p style={{ margin:'0 0 6px', fontSize:'24px', fontWeight:900, color:'var(--text-primary)', letterSpacing:'-0.02em', lineHeight:1.1 }}>
+                {s.value}
+              </p>
+              <p style={{ margin:0, fontSize:'11px', fontWeight:600, color:'#9ca3af', lineHeight:1.4 }}>
+                {s.sub}
               </p>
             </div>
+          ))}
+        </div>
+
+        {/* ════════════════════════════════════════
+            SECTION 4 — WHAT TO DO NEXT (beginner guide)
+        ════════════════════════════════════════ */}
+        {steps.length > 0 && (
+          <div className="cashly-card" style={{
+            borderRadius:'20px', padding:'20px 24px', marginBottom:'20px',
+          }}>
+            <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'14px' }}>
+              <div style={{
+                width:'30px',height:'30px',borderRadius:'9px',
+                background:'rgba(245,158,11,0.12)',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                color:'#f59e0b',
+              }}>
+                <BookOpen size={15}/>
+              </div>
+              <div>
+                <p style={{ margin:0, fontWeight:800, fontSize:'14px', color:'var(--text-primary)' }}>
+                  Your Next Steps
+                </p>
+                <p style={{ margin:0, fontSize:'11px', color:'var(--text-muted)', fontWeight:500 }}>
+                  Follow these to get the most out of CASHLY
+                </p>
+              </div>
+            </div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:'10px' }}>
+              {steps.map((step, i) => (
+                <Link key={i} to={step.to} className="db-step" style={{
+                  display:'flex', alignItems:'center', gap:'10px',
+                  padding:'10px 16px', borderRadius:'12px',
+                  border:`1px solid var(--border-card)`,
+                  background:'var(--bg-subtle)',
+                  textDecoration:'none', flex:'1', minWidth:'200px',
+                  transition:'all 0.18s ease',
+                  opacity: step.done ? 0.6 : 1,
+                }}>
+                  <span style={{ fontSize:'18px', flexShrink:0 }}>{step.icon}</span>
+                  <span style={{ fontSize:'13px', fontWeight:600, color:'var(--text-primary)', flex:1 }}>
+                    {step.text}
+                  </span>
+                  {!step.done && <ChevronRight size={14} style={{ color:'var(--text-faint)', flexShrink:0 }}/>}
+                </Link>
+              ))}
+            </div>
           </div>
-          {/* Lime accent dot cluster */}
-          <div className="absolute top-4 right-4 flex gap-1">
-            {[1,2,3].map(i => (
-              <div key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(163,230,53,0.6)' }} />
-            ))}
-          </div>
-          <div className="absolute -bottom-10 -right-10 w-40 h-40 rounded-full blur-2xl opacity-20 pointer-events-none" style={{ background: '#84cc16' }} />
-        </div>
-      </div>
+        )}
 
-      {/* ── Stat Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard
-          title="Total Expenses"
-          amount={`$${data.totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          icon={<Wallet size={22} />}
-          accentColor="#0d9488"
-          subtitle="All time"
-        />
-        <StatCard
-          title="Monthly Spending"
-          amount={`$${data.monthlySpending.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          icon={<TrendingUp size={22} />}
-          accentColor="#14b8a6"
-          subtitle="This month"
-          trend={user?.monthlyIncome ? `${((data.monthlySpending / user.monthlyIncome) * 100).toFixed(0)}% of income` : null}
-          trendUp={data.monthlySpending <= (user?.monthlyIncome || Infinity)}
-        />
-        <StatCard
-          title="Top Category"
-          amount={data.highestSpendingCategory || 'N/A'}
-          icon={<Tag size={22} />}
-          accentColor="#84cc16"
-          subtitle="Highest spending area"
-        />
-        <StatCard
-          title="Monthly Income"
-          amount={`$${(user?.monthlyIncome || 0).toLocaleString()}`}
-          icon={<Activity size={22} />}
-          accentColor="#0f766e"
-          subtitle="Your set income"
-        />
-      </div>
+        {/* ════════════════════════════════════════
+            SECTION 5 — CHART + RECENT TRANSACTIONS
+        ════════════════════════════════════════ */}
+        <div style={{
+          display:'grid', gridTemplateColumns:'2fr 1fr',
+          gap:'16px', marginBottom:'20px',
+        }}>
 
-      {/* ── Health Score + Recommendations ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-1">
-          <MoneyHealthCard />
-        </div>
-        <div className="xl:col-span-2">
-          <RecommendationsCard />
-        </div>
-      </div>
-
-      {/* ── Charts + Recent Transactions ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-        {/* Charts */}
-        <div className="xl:col-span-2 space-y-6">
-          <ChartCard title="Daily Spending Trend" subtitle="Last 30 days">
+          {/* Spending Chart */}
+          <ChartCard
+            title="Daily Spending — Last 30 Days"
+            subtitle="Each bar = how much you spent on that day"
+          >
             {data.dailySpendingTrend.length > 0 ? (() => {
-              const avg = data.dailySpendingTrend.reduce((s, d) => s + d.total, 0) / data.dailySpendingTrend.length;
+              const avg = data.dailySpendingTrend.reduce((s,d) => s + d.total, 0) / data.dailySpendingTrend.length;
               const tickStep = Math.max(1, Math.ceil(data.dailySpendingTrend.length / 7));
               return (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={data.dailySpendingTrend}
-                    margin={{ top: 18, right: 16, left: -10, bottom: 0 }}
-                  >
+                  <AreaChart data={data.dailySpendingTrend} margin={{ top:16, right:12, left:-10, bottom:0 }}>
                     <defs>
-                      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%"   stopColor="#0d9488" stopOpacity={0.35} />
-                        <stop offset="60%"  stopColor="#0d9488" stopOpacity={0.08} />
-                        <stop offset="100%" stopColor="#0d9488" stopOpacity={0} />
+                      <linearGradient id="dbGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%"   stopColor="#0d9488" stopOpacity={0.35}/>
+                        <stop offset="100%" stopColor="#0d9488" stopOpacity={0}/>
                       </linearGradient>
-                      <filter id="lineShadow" x="-5%" y="-10%" width="110%" height="130%">
-                        <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#0d9488" floodOpacity="0.35" />
-                      </filter>
                     </defs>
-
-                    <CartesianGrid
-                      strokeDasharray="4 4"
-                      vertical={false}
-                      stroke={isDark ? '#1a3535' : '#e6faf8'}
-                    />
-
+                    <CartesianGrid strokeDasharray="4 4" vertical={false} stroke={isDark ? '#1a3535' : '#e6faf8'}/>
                     <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 11, fill: isDark ? '#4a7a76' : '#9ca3af', fontWeight: 600 }}
-                      tickLine={false}
-                      axisLine={false}
-                      dy={10}
-                      interval={tickStep - 1}
-                      tickFormatter={(val) => {
-                        const d = new Date(val);
-                        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                      dataKey="date" tickLine={false} axisLine={false} dy={8}
+                      interval={tickStep-1}
+                      tick={{ fontSize:11, fill:'#9ca3af', fontWeight:700 }}
+                      tickFormatter={v => {
+                        const d = new Date(v);
+                        return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
                       }}
                     />
-
                     <YAxis
-                      tick={{ fontSize: 11, fill: isDark ? '#4a7a76' : '#9ca3af', fontWeight: 600 }}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(val) => val === 0 ? '' : `$${val}`}
-                      width={52}
+                      tickLine={false} axisLine={false} width={52}
+                      tick={{ fontSize:11, fill:'#9ca3af', fontWeight:700 }}
+                      tickFormatter={v => v === 0 ? '' : `${user?.currency || '$'}${v}`}
                     />
-
-                    {/* Average reference line */}
                     <ReferenceLine
-                      y={avg}
-                      stroke={isDark ? '#2dd4bf' : '#0d9488'}
-                      strokeDasharray="6 4"
-                      strokeWidth={1.5}
-                      strokeOpacity={0.6}
-                      label={{
-                        value: `Avg $${avg.toFixed(0)}`,
-                        position: 'insideTopRight',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        fill: isDark ? '#2dd4bf' : '#0d9488',
-                        dy: -6,
-                      }}
+                      y={avg} stroke={isDark ? '#2dd4bf' : '#0d9488'}
+                      strokeDasharray="6 3" strokeWidth={1.5} strokeOpacity={0.6}
+                      label={{ value:`Daily avg ${user?.currency || '$'}${avg.toFixed(0)}`, position:'insideTopRight',
+                               fontSize:10, fontWeight:700, fill: isDark ? '#2dd4bf' : '#0d9488', dy:-5 }}
                     />
-
                     <RechartsTooltip
-                      cursor={{
-                        stroke: isDark ? '#2dd4bf' : '#0d9488',
-                        strokeWidth: 1.5,
-                        strokeDasharray: '4 4',
-                      }}
+                      cursor={{ stroke: isDark ? '#2dd4bf' : '#0d9488', strokeWidth:1.5, strokeDasharray:'4 4' }}
                       content={({ active, payload, label }) => {
                         if (!active || !payload?.length) return null;
-                        const d = new Date(label);
-                        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
-                        const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                        const val = payload[0].value;
+                        const val  = payload[0].value;
                         const diff = val - avg;
+                        const d    = new Date(label);
                         return (
                           <div style={{
-                            background: isDark ? '#0f2323' : '#ffffff',
-                            border: `1px solid ${isDark ? '#1a3d3d' : '#ccfbf1'}`,
-                            borderRadius: '14px',
-                            padding: '12px 16px',
-                            boxShadow: '0 12px 32px rgba(13,148,136,0.18)',
-                            minWidth: '150px',
+                            background: isDark ? '#0f2323' : '#fff',
+                            border:`1px solid ${isDark ? '#1a3d3d' : '#ccfbf1'}`,
+                            borderRadius:'14px', padding:'12px 16px',
+                            boxShadow:'0 12px 32px rgba(13,148,136,0.18)', minWidth:'160px',
                           }}>
-                            <p style={{ fontSize: 11, fontWeight: 800, color: isDark ? '#4a7a76' : '#9ca3af', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                              {dayName} · {dateStr}
+                            <p style={{ margin:'0 0 4px', fontSize:11, fontWeight:800, color:isDark?'#4a7a76':'#9ca3af', textTransform:'uppercase', letterSpacing:'0.06em' }}>
+                              {d.toLocaleDateString('en-US',{weekday:'short'})} · {d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
                             </p>
-                            <p style={{ fontSize: 22, fontWeight: 900, color: '#0d9488', lineHeight: 1, marginBottom: 6 }}>
-                              ${val.toFixed(2)}
+                            <p style={{ margin:'0 0 4px', fontSize:22, fontWeight:900, color:'#0d9488', lineHeight:1 }}>
+                              {fmt(val, user?.currency)}
                             </p>
-                            <p style={{
-                              fontSize: 11, fontWeight: 700,
-                              color: diff > 0 ? '#f87171' : '#34d399',
-                            }}>
-                              {diff > 0 ? '▲' : '▼'} ${Math.abs(diff).toFixed(2)} vs avg
+                            <p style={{ margin:0, fontSize:11, fontWeight:700, color: diff>0?'#f87171':'#34d399' }}>
+                              {diff>0?'▲':'▼'} {fmt(Math.abs(diff), user?.currency)} vs daily average
                             </p>
                           </div>
                         );
                       }}
                     />
-
-                    <Area
-                      type="monotone"
-                      dataKey="total"
-                      stroke="#0d9488"
-                      strokeWidth={2.5}
-                      fill="url(#areaGrad)"
-                      filter="url(#lineShadow)"
-                      dot={false}
-                      activeDot={{
-                        r: 6,
-                        fill: '#0d9488',
-                        stroke: isDark ? '#0f2323' : '#ffffff',
-                        strokeWidth: 3,
-                        filter: 'url(#lineShadow)',
-                      }}
+                    <Area type="monotone" dataKey="total" stroke="#0d9488" strokeWidth={3}
+                      fill="url(#dbGrad)" dot={false}
+                      activeDot={{ r:6, fill:'#0d9488', stroke: isDark?'#0f2323':'#fff', strokeWidth:3 }}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
               );
             })() : (
-              <EmptyChart icon={<TrendingUp size={28} style={{ color: 'var(--teal-400)' }} />} label="No spending trend yet" />
+              <EmptyChart label="No spending days recorded yet" sub="Add some expenses to see your spending trend" />
             )}
           </ChartCard>
 
-          <CategoryBreakdownCard
-            categorySummary={data.categorySummary}
-            periodLabel="All time"
-          />
-        </div>
-
-        {/* Recent Transactions */}
-        <div className="xl:col-span-1">
-          <div
-            className="rounded-2xl h-full flex flex-col cashly-card"
-            style={{ minHeight: '200px' }}
-          >
-            <div
-              className="flex items-center justify-between p-6 shrink-0"
-              style={{ borderBottom: `1px solid ${isDark ? '#0d2020' : '#ecfdf5'}` }}
-            >
+          {/* Recent Transactions */}
+          <div className="cashly-card" style={{
+            borderRadius:'20px', display:'flex', flexDirection:'column', overflow:'hidden',
+          }}>
+            <div style={{
+              display:'flex', alignItems:'center', justifyContent:'space-between',
+              padding:'18px 20px',
+              borderBottom:`1px solid ${isDark?'#0d2020':'#ecfdf5'}`,
+            }}>
               <div>
-                <h3 className="font-bold" style={{ color: 'var(--text-primary)' }}>Recent Activity</h3>
-                <p className="text-xs font-medium mt-0.5" style={{ color: 'var(--text-faint)' }}>Latest transactions</p>
+                <p style={{ margin:0, fontWeight:800, fontSize:'14px', color:'var(--text-primary)' }}>
+                  Recent Transactions
+                </p>
+                <p style={{ margin:0, fontSize:'11px', color:'#9ca3af', fontWeight:600, marginTop:'2px' }}>
+                  Your latest expenses
+                </p>
               </div>
-              <Link
-                to="/expenses"
-                className="text-xs font-bold flex items-center gap-1 px-3 py-1.5 rounded-full transition-colors"
-                style={{ color: 'var(--teal-600)', background: 'var(--teal-50)', border: '1px solid #99f6e4' }}
-              >
-                View All <ArrowRight size={13} />
+              <Link to="/expenses" style={{
+                display:'inline-flex',alignItems:'center',gap:'4px',
+                fontSize:'12px',fontWeight:700,color:'var(--teal-600)',
+                padding:'5px 12px',borderRadius:'999px',
+                background:'var(--bg-subtle)',border:'1px solid var(--border-card)',
+                textDecoration:'none',
+              }}>
+                All <ArrowRight size={12}/>
               </Link>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar" style={{ borderTop: 'none' }}>
-              {data.recentTransactions.length > 0 ? (
-                data.recentTransactions.map((tx) => (
-                  <div
-                    key={tx._id}
-                    className="flex items-center justify-between px-5 py-4 transition-colors group cursor-default"
-                    style={{ borderBottom: `1px solid ${isDark ? '#0d2020' : '#f0fdf4'}` }}
-                    onMouseEnter={e => e.currentTarget.style.background = isDark ? 'var(--bg-subtle)' : '#f0fdf4'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="h-10 w-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 transition-colors"
-                        style={{ background: isDark ? 'var(--bg-subtle)' : '#ecfdf5', color: 'var(--teal-700)', border: `1px solid ${isDark ? '#0d2626' : '#d1fae5'}` }}
-                      >
-                        {tx.category.charAt(0)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{tx.title}</p>
-                        <p className="text-xs font-medium mt-0.5" style={{ color: 'var(--text-faint)' }}>
-                          {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {tx.category}
-                        </p>
-                      </div>
+            <div style={{ flex:1, overflowY:'auto' }}>
+              {data.recentTransactions.length > 0 ? data.recentTransactions.map(tx => (
+                <div key={tx._id} className="db-tx" style={{
+                  display:'flex',alignItems:'center',justifyContent:'space-between',
+                  width:'100%',
+                  padding:'12px 20px',
+                  borderBottom:`1px solid ${isDark?'#0d2020':'#f0fdf4'}`,
+                  transition:'background 0.15s ease',
+                  cursor:'default',
+                  boxSizing:'border-box',
+                }}>
+                  <div style={{ display:'flex',alignItems:'center',gap:'10px', flex:1, minWidth:0 }}>
+                    <div style={{
+                      width:'36px',height:'36px',borderRadius:'10px',flexShrink:0,
+                      background: isDark?'var(--bg-subtle)':'#ecfdf5',
+                      color:'var(--teal-700)',
+                      border:`1px solid ${isDark?'#0d2626':'#d1fae5'}`,
+                      display:'flex',alignItems:'center',justifyContent:'center',
+                      fontWeight:900,fontSize:'13px',
+                    }}>
+                      {tx.category.charAt(0).toUpperCase()}
                     </div>
-                    <p className="font-black text-sm shrink-0 ml-3" style={{ color: 'var(--text-primary)' }}>
-                      -${tx.amount.toFixed(2)}
-                    </p>
+                    <div style={{ minWidth:0, flex:1 }}>
+                      <p style={{ margin:0, fontWeight:700, fontSize:'13px', color:'var(--text-primary)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                        {tx.title}
+                      </p>
+                      <p style={{ margin:0, fontSize:'11px', color:'#9ca3af', fontWeight:600, marginTop:'2px' }}>
+                        {new Date(tx.date).toLocaleDateString('en-US',{month:'short',day:'numeric'})} · {tx.category}
+                      </p>
+                    </div>
                   </div>
-                ))
-              ) : (
-                <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-                    style={{ background: 'var(--bg-subtle)', border: `1px solid ${isDark ? '#0d2626' : '#d1fae5'}` }}
-                  >
-                    <Wallet size={24} style={{ color: '#99f6e4' }} />
+                  <p style={{ margin:0, fontWeight:900, fontSize:'14px', color: overBudget ? '#f87171' : 'var(--text-primary)', flexShrink:0, paddingLeft:'12px' }}>
+                    -{fmt(tx.amount, user?.currency)}
+                  </p>
+                </div>
+              )) : (
+                <div style={{
+                  display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+                  padding:'40px 20px',textAlign:'center',
+                }}>
+                  <div style={{
+                    width:'48px',height:'48px',borderRadius:'14px',
+                    background:'var(--bg-subtle)',border:`1px solid ${isDark?'#0d2626':'#d1fae5'}`,
+                    display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'12px',
+                  }}>
+                    <Wallet size={22} style={{ color:'#99f6e4' }}/>
                   </div>
-                  <p className="font-bold mb-1" style={{ color: 'var(--text-secondary)' }}>No transactions yet</p>
-                  <p className="text-sm font-medium mb-5" style={{ color: 'var(--text-faint)' }}>Add your first expense to start tracking.</p>
-                  <Link
-                    to="/add-expense"
-                    className="btn-teal px-4 py-2.5 text-sm"
-                  >
-                    Add Expense
+                  <p style={{ margin:'0 0 4px', fontWeight:700, fontSize:'14px', color:'var(--text-secondary)' }}>
+                    No expenses yet
+                  </p>
+                  <p style={{ margin:'0 0 16px', fontSize:'12px', color:'var(--text-faint)' }}>
+                    Start by adding your first expense
+                  </p>
+                  <Link to="/add-expense" style={{
+                    display:'inline-flex',alignItems:'center',gap:'6px',
+                    padding:'10px 18px',borderRadius:'12px',
+                    background:'linear-gradient(135deg,var(--teal-600),var(--teal-500))',
+                    color:'#fff',fontWeight:700,fontSize:'13px',textDecoration:'none',
+                    boxShadow:'0 4px 14px rgba(13,148,136,0.30)',
+                  }}>
+                    <Plus size={15}/> Add Expense
                   </Link>
                 </div>
               )}
             </div>
           </div>
         </div>
+
+        {/* ════════════════════════════════════════
+            SECTION 6 — CATEGORY BREAKDOWN
+        ════════════════════════════════════════ */}
+        <CategoryBreakdownCard
+          categorySummary={data.categorySummary}
+          periodLabel="All time"
+        />
+
+        {/* ════════════════════════════════════════
+            SECTION 7 — QUICK TIPS (beginners)
+        ════════════════════════════════════════ */}
+        <div style={{ marginTop:'20px' }}>
+          <p style={{
+            margin:'0 0 12px', fontSize:'13px', fontWeight:700,
+            color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em',
+            display:'flex',alignItems:'center',gap:'6px',
+          }}>
+            <Sparkles size={13} style={{ color:'var(--teal-500)' }}/> Quick Tips
+          </p>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'12px' }}>
+            {[
+              { emoji:'🏷️', title:'Categorise expenses',   body:'Add a category when logging expenses — it helps you see where your money goes.' },
+              { emoji:'📅', title:'Track weekly',           body:'Check your dashboard every week to spot spending spikes before they grow.' },
+              { emoji:'🎯', title:'Start with a small goal', body:`Set a savings goal of even ${user?.currency || '$'}50/month — small wins build great habits.` },
+            ].map(t => (
+              <div key={t.title} className="cashly-card" style={{ borderRadius:'16px', padding:'18px' }}>
+                <p style={{ margin:'0 0 6px', fontSize:'22px' }}>{t.emoji}</p>
+                <p style={{ margin:'0 0 4px', fontWeight:800, fontSize:'13px', color:'var(--text-primary)' }}>
+                  {t.title}
+                </p>
+                <p style={{ margin:0, fontSize:'12px', fontWeight:500, color:'#9ca3af', lineHeight:1.5 }}>
+                  {t.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
-/** Shared empty state for charts */
-const EmptyChart = ({ icon, label }) => (
-  <div
-    className="h-full flex flex-col items-center justify-center rounded-2xl m-2 p-8"
-    style={{
-      background: 'var(--bg-subtle)',
-      border: '1px dashed #99f6e4',
-      color: 'var(--text-faint)',
-    }}
-  >
-    <div
-      className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border-card, #d1fae5)' }}
-    >
-      {icon}
-    </div>
-    <p className="font-bold mb-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
-    <p className="text-sm">Add expenses to see your chart.</p>
+const EmptyChart = ({ label, sub }) => (
+  <div style={{
+    height:'100%', display:'flex', flexDirection:'column',
+    alignItems:'center', justifyContent:'center',
+    background:'var(--bg-subtle)', borderRadius:'16px',
+    border:'1px dashed #99f6e4', textAlign:'center', padding:'32px',
+  }}>
+    <TrendingUp size={32} style={{ color:'var(--teal-400)', marginBottom:'12px' }}/>
+    <p style={{ margin:'0 0 4px', fontWeight:700, color:'var(--text-muted)', fontSize:'14px' }}>{label}</p>
+    {sub && <p style={{ margin:0, fontSize:'12px', color:'var(--text-faint)' }}>{sub}</p>}
   </div>
 );
 

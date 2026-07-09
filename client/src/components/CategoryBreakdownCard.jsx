@@ -9,6 +9,9 @@ import {
 } from 'recharts';
 import { Tag, TrendingUp } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { AuthContext } from '../context/AuthContext';
+import { useContext } from 'react';
+import { formatCurrency as globalFormatCurrency } from '../utils/currencyUtils';
 
 const CATEGORY_COLORS = {
   food: '#84cc16',
@@ -31,12 +34,12 @@ const FALLBACK_COLORS = [
   '#64748b',
 ];
 
-const formatCurrency = (value, { decimals = 'auto' } = {}) => {
+const formatCurrency = (value, currency, { decimals = 'auto' } = {}) => {
   const amount = Number(value) || 0;
   const hasCents = Math.abs(amount % 1) > 0.005;
   const fractionDigits = decimals === 'auto' ? (hasCents ? 2 : 0) : decimals;
 
-  return `Rs. ${amount.toLocaleString('en-LK', {
+  return `${currency}${amount.toLocaleString(undefined, {
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
   })}`;
@@ -132,7 +135,7 @@ const CategoryTooltip = ({ active, payload, isDark }) => {
         </span>
       </div>
       <div style={{ color: item.color, fontSize: 20, fontWeight: 900, lineHeight: 1 }}>
-        {formatCurrency(item.total, { decimals: 'auto' })}
+        {formatCurrency(item.total, payload[0].payload.currency, { decimals: 'auto' })}
       </div>
       <div
         style={{
@@ -218,6 +221,8 @@ const CategoryBreakdownCard = ({
   error = '',
 }) => {
   const { isDark } = useTheme();
+  const { user } = useContext(AuthContext);
+  const currency = user?.currency || '$';
   const [activeIndex, setActiveIndex] = useState(null);
 
   const chartData = useMemo(() => {
@@ -233,15 +238,16 @@ const CategoryBreakdownCard = ({
 
     return normalized.map((item, index) => ({
       ...item,
+      currency,
       color: getCategoryColor(item.category, index),
       percentage: total > 0 ? (item.total / total) * 100 : 0,
     }));
-  }, [categorySummary]);
+  }, [categorySummary, currency]);
 
   const total = chartData.reduce((sum, item) => sum + item.total, 0);
   const topCategory = chartData[0];
   const hasData = chartData.length > 0 && total > 0;
-  const centerTotal = formatCurrency(total, { decimals: 'auto' });
+  const centerTotal = formatCurrency(total, currency, { decimals: 'auto' });
 
   return (
     <section
@@ -371,7 +377,7 @@ const CategoryBreakdownCard = ({
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>
-                          {formatCurrency(entry.total, { decimals: 'auto' })}
+                          {formatCurrency(entry.total, currency, { decimals: 'auto' })}
                         </p>
                         <p className="text-xs font-black" style={{ color: entry.color }}>
                           {formatPercent(entry.percentage)}
@@ -425,7 +431,7 @@ const CategoryBreakdownCard = ({
                 <span style={{ color: topCategory.color, fontWeight: 900 }}>
                   {topCategory.category}
                 </span>{' '}
-                in this breakdown: {formatCurrency(topCategory.total, { decimals: 'auto' })},{' '}
+                in this breakdown: {formatCurrency(topCategory.total, currency, { decimals: 'auto' })},{' '}
                 {formatPercent(topCategory.percentage)} of total spending.
               </p>
             </div>

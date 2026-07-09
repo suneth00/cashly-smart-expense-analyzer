@@ -2,15 +2,7 @@ const Expense = require('../models/Expense');
 
 const priorityRank = { high: 3, medium: 2, low: 1 };
 
-const formatCurrency = (value) => {
-  const amount = Number(value) || 0;
-  const hasCents = Math.abs(amount % 1) > 0.005;
 
-  return `Rs. ${amount.toLocaleString('en-LK', {
-    minimumFractionDigits: hasCents ? 2 : 0,
-    maximumFractionDigits: hasCents ? 2 : 0,
-  })}`;
-};
 
 const formatPercent = (value) => `${Math.round(value)}%`;
 
@@ -26,7 +18,7 @@ const getReductionAmount = (amount, ratio = 0.18) => {
   return Math.min(amount, Math.ceil(target / step) * step);
 };
 
-const buildBeginnerAdvice = (income, savingsGoal) => {
+const buildBeginnerAdvice = (income, savingsGoal, formatCurrency) => {
   const recommendations = [];
 
   addAdvice(
@@ -67,7 +59,7 @@ const buildBeginnerAdvice = (income, savingsGoal) => {
   return recommendations;
 };
 
-const fillAdvice = (recommendations, context) => {
+const fillAdvice = (recommendations, context, formatCurrency) => {
   const {
     income,
     savingsGoal,
@@ -142,6 +134,16 @@ const getRecommendations = async (req, res) => {
     const userId = req.user._id;
     const income = Number(req.user.monthlyIncome) || 0;
     const savingsGoal = Number(req.user.savingsGoal) || 0;
+    const currency = req.user.currency || '$';
+
+    const formatCurrency = (value) => {
+      const amount = Number(value) || 0;
+      const hasCents = Math.abs(amount % 1) > 0.005;
+      return `${currency}${amount.toLocaleString(undefined, {
+        minimumFractionDigits: hasCents ? 2 : 0,
+        maximumFractionDigits: hasCents ? 2 : 0,
+      })}`;
+    };
 
     const currentDate = new Date();
     const startOfCurrentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -155,7 +157,7 @@ const getRecommendations = async (req, res) => {
     ]);
 
     if (allExpenseCount === 0) {
-      return res.status(200).json(buildBeginnerAdvice(income, savingsGoal));
+      return res.status(200).json(buildBeginnerAdvice(income, savingsGoal, formatCurrency));
     }
 
     const recommendations = [];
@@ -335,7 +337,7 @@ const getRecommendations = async (req, res) => {
       incomeUsagePercent,
       topCategory,
       categoryTotals,
-    });
+    }, formatCurrency);
 
     const sortedRecommendations = recommendations
       .sort((a, b) => priorityRank[b.priority] - priorityRank[a.priority])

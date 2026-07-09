@@ -75,14 +75,15 @@ const AddExpense = () => {
 
   const previewInputStyle = {
     width: '100%',
-    padding: '11px 13px',
+    padding: '12px 14px',
     borderRadius: 12,
-    border: '1px solid var(--border-card)',
-    background: 'var(--bg-subtle)',
+    border: '1.5px solid var(--border-card)',
+    background: isDark ? '#0d2020' : '#f0fdf4',
     color: 'var(--text-primary)',
     fontSize: 13,
-    fontWeight: 700,
+    fontWeight: 600,
     outline: 'none',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
   };
 
   const applyParsedTranscript = (text) => {
@@ -182,7 +183,7 @@ const AddExpense = () => {
     <div className="w-full max-w-3xl pb-10">
       <div className="mb-10">
         <h1 className="text-4xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>Add New Expense</h1>
-        <p className="mt-2 font-medium text-lg" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-2 font-medium text-lg" style={{ color: '#9ca3af' }}>
           Track your spending manually or with your voice.
         </p>
       </div>
@@ -216,7 +217,7 @@ const AddExpense = () => {
             >
               <Mic size={26} style={{ color: 'var(--teal-600)' }} /> Voice Assistant
             </h3>
-            <p className="font-medium text-base max-w-xl leading-relaxed" style={{ color: isDark ? 'var(--text-muted)' : 'var(--teal-700)' }}>
+            <p className="font-medium text-base max-w-xl leading-relaxed" style={{ color: isDark ? '#9ca3af' : 'var(--teal-700)' }}>
               {isListening
                 ? 'Listening... Say something like: I spent 850 rupees on food today'
                 : 'Say an expense naturally, then review the detected details before using them.'}

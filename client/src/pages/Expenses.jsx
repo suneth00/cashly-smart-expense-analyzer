@@ -1,19 +1,27 @@
 import { useState, useEffect } from 'react';
 import axios from '../api/axios';
-import { Search, Filter, ArrowUpDown, Plus } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, Plus, X } from 'lucide-react';
 import ExpenseTable from '../components/ExpenseTable';
 import ExpenseForm from '../components/ExpenseForm';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { useSearch } from '../context/SearchContext';
 
 const Expenses = () => {
   const { isDark } = useTheme();
+  const { query, setQuery, clearSearch } = useSearch();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  // local search mirrors the global query from Navbar
+  const [search, setSearch] = useState(query || '');
   const [category, setCategory] = useState('');
   const [sort, setSort] = useState('newest');
   const [editingExpense, setEditingExpense] = useState(null);
+
+  // Keep local search in sync whenever Navbar updates the global query
+  useEffect(() => {
+    setSearch(query || '');
+  }, [query]);
 
   const fetchExpenses = async () => {
     setLoading(true);
@@ -62,8 +70,21 @@ const Expenses = () => {
   const handleEdit = (expense) => setEditingExpense(expense);
   const handleEditSuccess = () => { setEditingExpense(null); fetchExpenses(); };
 
+  const handleSearchChange = (val) => {
+    setSearch(val);
+    setQuery(val); // keep Navbar bar in sync too
+  };
+
+  const handleClearSearch = () => {
+    clearSearch();
+    setSearch('');
+  };
+
   let filtered = [...expenses];
-  if (search)   filtered = filtered.filter(exp => exp.title.toLowerCase().includes(search.toLowerCase()));
+  if (search)   filtered = filtered.filter(exp =>
+    exp.title.toLowerCase().includes(search.toLowerCase()) ||
+    exp.category.toLowerCase().includes(search.toLowerCase())
+  );
   if (category) filtered = filtered.filter(exp => exp.category === category);
   filtered.sort((a, b) => {
     if (sort === 'newest')  return new Date(b.date) - new Date(a.date);
@@ -99,7 +120,7 @@ const Expenses = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
         <div>
           <h1 className="text-4xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>All Expenses</h1>
-          <p className="mt-2 font-medium text-lg" style={{ color: 'var(--text-muted)' }}>
+          <p className="mt-2 font-medium text-lg" style={{ color: '#9ca3af' }}>
             Manage and track your transaction history.
           </p>
         </div>
@@ -124,15 +145,37 @@ const Expenses = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2" size={18} style={{ color: 'var(--teal-500)' }} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2" size={18} style={{ color: search ? 'var(--teal-500)' : 'var(--text-faint)' }} />
             <input
               type="text"
-              placeholder="Search by title..."
+              placeholder="Search by title or category…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={inputStyle}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              style={{
+                ...inputStyle,
+                border: search ? '1.5px solid var(--teal-500)' : '1.5px solid var(--border-card)',
+                boxShadow: search ? '0 0 0 4px rgba(13,148,136,0.08)' : 'none',
+                paddingRight: search ? '44px' : '16px',
+              }}
               className="input-teal"
             />
+            {search && (
+              <button
+                onClick={handleClearSearch}
+                style={{
+                  position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: '20px', height: '20px', borderRadius: '50%',
+                  background: 'var(--text-faint)', border: 'none', cursor: 'pointer',
+                  color: 'var(--bg-card)', transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = '#ef4444'}
+                onMouseLeave={e => e.currentTarget.style.background = 'var(--text-faint)'}
+                aria-label="Clear search"
+              >
+                <X size={11} strokeWidth={3} />
+              </button>
+            )}
           </div>
           {/* Filter */}
           <div className="relative">
@@ -154,6 +197,37 @@ const Expenses = () => {
           </div>
         </div>
       </div>
+
+      {/* Search result count */}
+      {search && !loading && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 16px', borderRadius: '12px', marginBottom: '12px',
+          background: 'rgba(13,148,136,0.08)',
+          border: '1px solid rgba(13,148,136,0.20)',
+        }}>
+          <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--teal-600)' }}>
+            {filtered.length === 0
+              ? `No results for "${search}"`
+              : `${filtered.length} result${filtered.length !== 1 ? 's' : ''} for "${search}"`
+            }
+          </p>
+          <button
+            onClick={handleClearSearch}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              fontSize: '12px', fontWeight: 700,
+              color: 'var(--text-muted)', background: 'none',
+              border: 'none', cursor: 'pointer', padding: '4px 8px',
+              borderRadius: '8px', transition: 'color 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+          >
+            <X size={13}/> Clear
+          </button>
+        </div>
+      )}
 
       <ExpenseTable expenses={filtered} loading={loading} onEdit={handleEdit} onDelete={handleDelete} />
 

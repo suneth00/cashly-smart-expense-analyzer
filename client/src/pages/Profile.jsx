@@ -1,31 +1,45 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
-import { User, Mail, DollarSign, Target, Loader2, CheckCircle, Save } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import {
+  User, Mail, Banknote, Target, Loader2,
+  CheckCircle, Save, Shield, TrendingUp, Wallet, AlertCircle, Globe
+} from 'lucide-react';
+import { formatCurrency, availableCurrencies } from '../utils/currencyUtils';
 
 const Profile = () => {
   const { user, setUser } = useContext(AuthContext);
-  const [formData, setFormData] = useState({ name: '', monthlyIncome: '', savingsGoal: '' });
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
+  const { isDark } = useTheme();
+  const [formData, setFormData]   = useState({ name: '', monthlyIncome: '', savingsGoal: '', currency: '$' });
+  const [loading, setLoading]     = useState(false);
+  const [success, setSuccess]     = useState('');
+  const [error, setError]         = useState('');
+  const [focused, setFocused]     = useState('');
 
   useEffect(() => {
     if (user) {
-      setFormData({ name: user.name || '', monthlyIncome: user.monthlyIncome || '', savingsGoal: user.savingsGoal || '' });
+      setFormData({
+        name:          user.name          || '',
+        monthlyIncome: user.monthlyIncome || '',
+        savingsGoal:   user.savingsGoal   || '',
+        currency:      user.currency      || '$',
+      });
     }
   }, [user]);
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true); setError(''); setSuccess('');
     try {
       const res = await axios.put('/auth/profile', {
-        name: formData.name,
+        name:          formData.name,
         monthlyIncome: Number(formData.monthlyIncome),
-        savingsGoal: Number(formData.savingsGoal)
+        savingsGoal:   Number(formData.savingsGoal),
+        currency:      formData.currency,
       });
       setUser(res.data);
       setSuccess('Profile updated successfully!');
@@ -39,121 +53,537 @@ const Profile = () => {
 
   if (!user) return null;
 
-  const inputStyle = {
-    width: '100%',
-    paddingLeft: '48px',
-    paddingRight: '20px',
-    paddingTop: '14px',
-    paddingBottom: '14px',
-    borderRadius: '14px',
-    border: '1.5px solid #d1fae5',
-    background: 'var(--bg-subtle)',
-    color: 'var(--text-primary)',
-    fontWeight: 700,
-    fontSize: '14px',
-    outline: 'none',
-    transition: 'all 0.2s',
+  /* ── helpers ── */
+  const fieldStyle = (name) => ({
+    width:          '100%',
+    paddingLeft:    '48px',
+    paddingRight:   '16px',
+    paddingTop:     '14px',
+    paddingBottom:  '14px',
+    borderRadius:   '14px',
+    border:         `1.5px solid ${focused === name ? 'var(--teal-500)' : 'var(--border-card)'}`,
+    background:     isDark ? '#0c1f1e' : '#f4fffe',
+    color:          'var(--text-primary)',
+    fontWeight:     600,
+    fontSize:       '14px',
+    outline:        'none',
+    transition:     'all 0.2s ease',
+    boxShadow:      focused === name ? '0 0 0 4px rgba(13,148,136,0.12)' : 'none',
+    fontFamily:     'Inter, sans-serif',
+  });
+
+  const disabledFieldStyle = {
+    ...fieldStyle(''),
+    background:   isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc',
+    color:        'var(--text-faint)',
+    cursor:       'not-allowed',
+    border:       `1.5px solid ${isDark ? '#1a3535' : '#e2e8f0'}`,
+    boxShadow:    'none',
   };
 
+  const statCards = [
+    {
+      icon:    <Banknote size={20} />,
+      label:   'Monthly Income',
+      value:   formatCurrency(formData.monthlyIncome, formData.currency),
+      accent:  'var(--teal-600)',
+      bgFrom:  'rgba(13,148,136,0.12)',
+      bgTo:    'rgba(13,148,136,0.04)',
+    },
+    {
+      icon:    <Target size={20} />,
+      label:   'Savings Goal',
+      value:   formatCurrency(formData.savingsGoal, formData.currency),
+      accent:  '#84cc16',
+      bgFrom:  'rgba(132,204,22,0.12)',
+      bgTo:    'rgba(132,204,22,0.04)',
+    },
+    {
+      icon:    <TrendingUp size={20} />,
+      label:   'Save Rate',
+      value:   formData.monthlyIncome
+                 ? `${Math.min(100, Math.round((Number(formData.savingsGoal) / Number(formData.monthlyIncome)) * 100))}%`
+                 : '—',
+      accent:  '#f59e0b',
+      bgFrom:  'rgba(245,158,11,0.12)',
+      bgTo:    'rgba(245,158,11,0.04)',
+    },
+  ];
+
   return (
-    <div className="w-full max-w-3xl pb-12">
-      <div className="mb-10">
-        <h1 className="text-4xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>Your Profile</h1>
-        <p className="mt-2 font-medium text-lg" style={{ color: 'var(--text-muted)' }}>Manage your personal information and financial goals.</p>
-      </div>
+    <>
+      <style>{`
+        .profile-input:focus { outline: none; }
+        .save-btn:hover:not(:disabled) { transform: translateY(-1px); }
+        .save-btn:active:not(:disabled) { transform: translateY(0); }
+        .stat-tile { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+        .stat-tile:hover { transform: translateY(-3px); }
+      `}</style>
 
-      <div
-        className="relative overflow-hidden"
-        style={{ background: '#ffffff', border: '1px solid #d1fae5', borderRadius: '22px', boxShadow: '0 1px 6px rgba(13,148,136,0.07)', padding: '36px 32px' }}
-      >
-        {/* Decorative blob */}
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl -mr-24 -mt-24 pointer-events-none opacity-20" style={{ background: 'var(--teal-400)' }} />
+      <div style={{ width: '100%', maxWidth: '760px', paddingBottom: '48px' }}>
 
-        <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
-          {/* Avatar row */}
-          <div className="flex items-center gap-6 mb-8 pb-8" style={{ borderBottom: '1px solid #d1fae5' }}>
-            <div
-              className="w-24 h-24 text-white rounded-3xl flex shrink-0 items-center justify-center text-4xl font-black"
-              style={{ background: 'linear-gradient(135deg, var(--teal-600), var(--teal-400))', boxShadow: '0 8px 24px rgba(13,148,136,0.30)' }}
-            >
+        {/* ── Page Header ── */}
+        <div style={{ marginBottom: '32px' }}>
+          <h1 style={{
+            fontSize: '32px', fontWeight: 900, letterSpacing: '-0.02em',
+            color: 'var(--text-primary)', margin: 0,
+          }}>
+            Your Profile
+          </h1>
+          <p style={{ marginTop: '6px', fontWeight: 500, fontSize: '15px', color: '#9ca3af' }}>
+            Manage your personal information and financial goals.
+          </p>
+        </div>
+
+        {/* ── Avatar Hero Card ── */}
+        <div
+          style={{
+            borderRadius: '24px',
+            overflow: 'hidden',
+            marginBottom: '20px',
+            background:   'linear-gradient(135deg, #065f46 0%, #0d9488 60%, #0f766e 100%)',
+            boxShadow:    '0 8px 32px rgba(13,148,136,0.30)',
+            position:     'relative',
+          }}
+        >
+          {/* Background decorations */}
+          <div style={{
+            position: 'absolute', top: '-40px', right: '-40px',
+            width: '220px', height: '220px', borderRadius: '50%',
+            background: 'rgba(255,255,255,0.06)', pointerEvents: 'none',
+          }} />
+          <div style={{
+            position: 'absolute', bottom: '-60px', left: '30%',
+            width: '180px', height: '180px', borderRadius: '50%',
+            background: 'rgba(163,230,53,0.10)', pointerEvents: 'none',
+          }} />
+
+          <div style={{
+            position: 'relative', zIndex: 1,
+            display: 'flex', alignItems: 'center', gap: '24px',
+            padding: '28px 32px',
+          }}>
+            {/* Avatar */}
+            <div style={{
+              width: '80px', height: '80px', borderRadius: '22px', flexShrink: 0,
+              background: 'rgba(255,255,255,0.18)',
+              border:     '2px solid rgba(255,255,255,0.28)',
+              backdropFilter: 'blur(8px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '32px', fontWeight: 900, color: '#ffffff',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.20)',
+            }}>
               {user.name.charAt(0).toUpperCase()}
             </div>
-            <div className="overflow-hidden">
-              <h2 className="text-3xl font-black truncate tracking-tight" style={{ color: 'var(--text-primary)' }}>{user.name}</h2>
-              <p className="font-bold flex items-center gap-2 mt-2 w-max px-3 py-1 rounded-lg text-sm" style={{ background: '#ecfdf5', color: 'var(--teal-700)', border: '1px solid #d1fae5' }}>
-                <Mail size={15} /> {user.email}
+
+            {/* Name + email */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{
+                margin: 0, fontSize: '24px', fontWeight: 900,
+                color: '#ffffff', letterSpacing: '-0.01em',
+              }}>
+                {user.name}
+              </h2>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                marginTop: '8px',
+                background: 'rgba(255,255,255,0.14)',
+                border:     '1px solid rgba(255,255,255,0.20)',
+                borderRadius: '999px',
+                padding:    '4px 14px',
+                fontSize:   '13px', fontWeight: 600, color: '#ccfbf1',
+              }}>
+                <Mail size={13} /> {user.email}
+              </div>
+            </div>
+
+            {/* Premium badge */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: 'rgba(255,255,255,0.12)',
+              border:     '1px solid rgba(255,255,255,0.20)',
+              borderRadius: '12px',
+              padding:    '8px 14px',
+              fontSize:   '12px', fontWeight: 800,
+              color: '#ffffff', letterSpacing: '0.04em',
+              flexShrink: 0,
+            }}>
+              <Shield size={14} style={{ color: '#a3e635' }} />
+              PREMIUM ✦
+            </div>
+          </div>
+        </div>
+
+        {/* ── Stat tiles ── */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '16px', marginBottom: '20px',
+        }}>
+          {statCards.map((s) => (
+            <div
+              key={s.label}
+              className="stat-tile cashly-card"
+              style={{
+                borderRadius: '18px', padding: '20px',
+                background: `linear-gradient(135deg, ${s.bgFrom}, ${s.bgTo})`,
+              }}
+            >
+              <div style={{
+                width: '38px', height: '38px', borderRadius: '11px',
+                background: `${s.accent}22`,
+                border: `1px solid ${s.accent}33`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: s.accent, marginBottom: '12px',
+              }}>
+                {s.icon}
+              </div>
+              <p style={{ margin: 0, fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                {s.value}
+              </p>
+              <p style={{ margin: '4px 0 0', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                {s.label}
               </p>
             </div>
-          </div>
+          ))}
+        </div>
 
-          {success && (
-            <div className="p-4 rounded-2xl flex items-center gap-3 font-bold text-sm" style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#15803d' }}>
-              <CheckCircle size={20} style={{ color: '#22c55e' }} /> {success}
-            </div>
-          )}
-          {error && (
-            <div className="p-4 rounded-2xl font-bold text-sm flex items-center gap-3" style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#dc2626' }}>
-              {error}
-            </div>
-          )}
+        {/* ── Main form card ── */}
+        <div
+          className="cashly-card"
+          style={{ borderRadius: '24px', padding: '32px', position: 'relative', overflow: 'hidden' }}
+        >
+          {/* Subtle blob */}
+          <div style={{
+            position: 'absolute', top: '-60px', right: '-60px',
+            width: '200px', height: '200px', borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(13,148,136,0.08) 0%, transparent 70%)',
+            pointerEvents: 'none',
+          }} />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
-            <div className="space-y-2">
-              <label className="text-sm font-bold" style={{ color: 'var(--text-secondary)' }}>Full Name</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none" style={{ color: 'var(--teal-500)' }}><User size={19} /></div>
-                <input type="text" name="name" value={formData.name} onChange={handleChange} required style={inputStyle} className="input-teal" placeholder="John Doe" />
+          <form onSubmit={handleSubmit} style={{ position: 'relative', zIndex: 1 }}>
+
+            {/* Section label */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              marginBottom: '24px',
+            }}>
+              <div style={{
+                width: '32px', height: '32px', borderRadius: '10px',
+                background: 'rgba(13,148,136,0.12)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--teal-600)',
+              }}>
+                <User size={16} />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: '15px', color: 'var(--text-primary)' }}>
+                  Personal Info
+                </p>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                  Update your name and view your email
+                </p>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-bold" style={{ color: 'var(--text-secondary)' }}>Email Address</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none" style={{ color: 'var(--text-faint)' }}><Mail size={19} /></div>
-                <input type="email" value={user.email} disabled
-                  style={{ ...inputStyle, background: '#f9fafb', color: 'var(--text-faint)', cursor: 'not-allowed', border: '1.5px solid #e5e7eb' }}
-                />
+            {/* Alerts */}
+            {success && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '14px 18px', borderRadius: '14px', marginBottom: '20px',
+                background: 'rgba(16,185,129,0.10)',
+                border: '1px solid rgba(16,185,129,0.25)',
+                color: '#10b981', fontSize: '14px', fontWeight: 700,
+              }}>
+                <CheckCircle size={18} /> {success}
               </div>
-              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-faint)' }}>Email cannot be changed.</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-7 pt-6" style={{ borderTop: '1px solid #d1fae5' }}>
-            <div className="space-y-2">
-              <label className="text-sm font-bold" style={{ color: 'var(--text-secondary)' }}>Monthly Income ($)</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none" style={{ color: 'var(--teal-500)' }}><DollarSign size={19} /></div>
-                <input type="number" name="monthlyIncome" value={formData.monthlyIncome} onChange={handleChange} min="0" step="0.01"
-                  style={{ ...inputStyle, fontSize: '15px' }} className="input-teal" placeholder="5000" />
+            )}
+            {error && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '14px 18px', borderRadius: '14px', marginBottom: '20px',
+                background: 'rgba(239,68,68,0.10)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                color: '#ef4444', fontSize: '14px', fontWeight: 700,
+              }}>
+                <AlertCircle size={18} /> {error}
               </div>
-              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-faint)' }}>Used for Money Health Score.</p>
-            </div>
+            )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-bold" style={{ color: 'var(--text-secondary)' }}>Monthly Savings Goal ($)</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none" style={{ color: 'var(--lime-500)' }}><Target size={19} /></div>
-                <input type="number" name="savingsGoal" value={formData.savingsGoal} onChange={handleChange} min="0" step="0.01"
-                  style={{ ...inputStyle, fontSize: '15px' }} className="input-teal" placeholder="1000" />
+            {/* Row 1: Name + Email */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+              {/* Full Name */}
+              <div>
+                <label style={{
+                  display: 'block', marginBottom: '8px',
+                  fontSize: '12px', fontWeight: 700,
+                  color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em',
+                }}>
+                  Full Name
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                    color: focused === 'name' ? 'var(--teal-500)' : 'var(--text-faint)',
+                    display: 'flex', pointerEvents: 'none', transition: 'color 0.2s',
+                  }}>
+                    <User size={18} />
+                  </div>
+                  <input
+                    className="profile-input"
+                    type="text" name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    onFocus={() => setFocused('name')}
+                    onBlur={() => setFocused('')}
+                    required
+                    placeholder="John Doe"
+                    style={fieldStyle('name')}
+                  />
+                </div>
               </div>
-              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-faint)' }}>Target to keep spending in check.</p>
-            </div>
-          </div>
 
-          <div className="pt-7 flex justify-end" style={{ borderTop: '1px solid #d1fae5' }}>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-teal w-full md:w-auto px-10 py-4 flex items-center justify-center gap-2 text-sm"
-              style={{ borderRadius: '14px', fontSize: '15px', minWidth: '200px', opacity: loading ? 0.72 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
-            >
-              {loading ? <Loader2 size={22} className="animate-spin" /> : <Save size={20} />}
-              Save Profile Changes
-            </button>
-          </div>
-        </form>
+              {/* Email */}
+              <div>
+                <label style={{
+                  display: 'block', marginBottom: '8px',
+                  fontSize: '12px', fontWeight: 700,
+                  color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em',
+                }}>
+                  Email Address
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                    color: 'var(--text-faint)', display: 'flex', pointerEvents: 'none',
+                  }}>
+                    <Mail size={18} />
+                  </div>
+                  <input
+                    className="profile-input"
+                    type="email" value={user.email} disabled
+                    style={disabledFieldStyle}
+                  />
+                </div>
+                <p style={{
+                  margin: '6px 0 0', fontSize: '11px', fontWeight: 600,
+                  color: '#9ca3af', letterSpacing: '0.04em',
+                }}>
+                  🔒 Email cannot be changed
+                </p>
+              </div>
+            </div>
+
+            {/* Divider + Financial section */}
+            <div style={{
+              borderTop: `1px solid var(--border-card)`,
+              paddingTop: '24px', marginTop: '4px',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                marginBottom: '24px',
+              }}>
+                <div style={{
+                  width: '32px', height: '32px', borderRadius: '10px',
+                  background: 'rgba(132,204,22,0.12)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#84cc16',
+                }}>
+                  <Wallet size={16} />
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 800, fontSize: '15px', color: 'var(--text-primary)' }}>
+                    Financial Goals
+                  </p>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                    Set your income and savings targets
+                  </p>
+                </div>
+              </div>
+
+              {/* Row 2: Income + Savings */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                {/* Monthly Income */}
+                <div>
+                  <label style={{
+                    display: 'block', marginBottom: '8px',
+                    fontSize: '12px', fontWeight: 700,
+                    color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em',
+                  }}>
+                    Monthly Income
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <div style={{
+                      position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                      color: focused === 'monthlyIncome' ? 'var(--teal-500)' : 'var(--text-faint)',
+                      display: 'flex', pointerEvents: 'none', transition: 'color 0.2s',
+                    }}>
+                      <Banknote size={18} />
+                    </div>
+                    <input
+                      className="profile-input"
+                      type="number" name="monthlyIncome"
+                      value={formData.monthlyIncome}
+                      onChange={handleChange}
+                      onFocus={() => setFocused('monthlyIncome')}
+                      onBlur={() => setFocused('')}
+                      min="0" step="0.01"
+                      placeholder="5000"
+                      style={fieldStyle('monthlyIncome')}
+                    />
+                  </div>
+                  <p style={{
+                    margin: '6px 0 0', fontSize: '11px', fontWeight: 600,
+                    color: '#9ca3af', letterSpacing: '0.04em',
+                  }}>
+                    Used for Money Health Score
+                  </p>
+                </div>
+
+                {/* Savings Goal */}
+                <div>
+                  <label style={{
+                    display: 'block', marginBottom: '8px',
+                    fontSize: '12px', fontWeight: 700,
+                    color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em',
+                  }}>
+                    Monthly Savings Goal
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <div style={{
+                      position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                      color: focused === 'savingsGoal' ? '#84cc16' : 'var(--text-faint)',
+                      display: 'flex', pointerEvents: 'none', transition: 'color 0.2s',
+                    }}>
+                      <Target size={18} />
+                    </div>
+                    <input
+                      className="profile-input"
+                      type="number" name="savingsGoal"
+                      value={formData.savingsGoal}
+                      onChange={handleChange}
+                      onFocus={() => setFocused('savingsGoal')}
+                      onBlur={() => setFocused('')}
+                      min="0" step="0.01"
+                      placeholder="1000"
+                      style={{
+                        ...fieldStyle('savingsGoal'),
+                        boxShadow: focused === 'savingsGoal' ? '0 0 0 4px rgba(132,204,22,0.10)' : 'none',
+                        border: `1.5px solid ${focused === 'savingsGoal' ? '#84cc16' : 'var(--border-card)'}`,
+                      }}
+                    />
+                  </div>
+                  <p style={{
+                    margin: '6px 0 0', fontSize: '11px', fontWeight: 600,
+                    color: '#9ca3af', letterSpacing: '0.04em',
+                  }}>
+                    Target to keep spending in check
+                  </p>
+                </div>
+              </div>
+              
+              {/* Row 3: Currency */}
+              <div style={{ marginTop: '20px', width: 'calc(50% - 10px)' }}>
+                <label style={{
+                  display: 'block', marginBottom: '8px',
+                  fontSize: '12px', fontWeight: 700,
+                  color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em',
+                }}>
+                  Preferred Currency
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                    color: focused === 'currency' ? 'var(--teal-500)' : 'var(--text-faint)',
+                    display: 'flex', pointerEvents: 'none', transition: 'color 0.2s',
+                  }}>
+                    <Globe size={18} />
+                  </div>
+                  <select
+                    className="profile-input"
+                    name="currency"
+                    value={formData.currency}
+                    onChange={handleChange}
+                    onFocus={() => setFocused('currency')}
+                    onBlur={() => setFocused('')}
+                    style={{
+                      ...fieldStyle('currency'),
+                      appearance: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {availableCurrencies.map(c => (
+                      <option key={c.symbol} value={c.symbol}>{c.label}</option>
+                    ))}
+                  </select>
+                  <div style={{
+                    position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
+                    pointerEvents: 'none', color: 'var(--text-faint)'
+                  }}>
+                    ▼
+                  </div>
+                </div>
+                <p style={{
+                  margin: '6px 0 0', fontSize: '11px', fontWeight: 600,
+                  color: '#9ca3af', letterSpacing: '0.04em',
+                }}>
+                  This symbol will be used everywhere in the app
+                </p>
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <div style={{
+              borderTop: `1px solid var(--border-card)`,
+              paddingTop: '24px', marginTop: '28px',
+              display: 'flex', justifyContent: 'flex-end', gap: '12px',
+              alignItems: 'center',
+            }}>
+              {success && (
+                <span style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  fontSize: '13px', fontWeight: 700, color: '#10b981',
+                }}>
+                  <CheckCircle size={15} /> Saved!
+                </span>
+              )}
+              <button
+                type="submit"
+                disabled={loading}
+                className="save-btn"
+                style={{
+                  display:        'flex',
+                  alignItems:     'center',
+                  justifyContent: 'center',
+                  gap:            '8px',
+                  padding:        '14px 32px',
+                  borderRadius:   '14px',
+                  border:         'none',
+                  cursor:         loading ? 'not-allowed' : 'pointer',
+                  fontWeight:     800,
+                  fontSize:       '14px',
+                  color:          '#ffffff',
+                  minWidth:       '200px',
+                  opacity:        loading ? 0.72 : 1,
+                  fontFamily:     'Inter, sans-serif',
+                  transition:     'all 0.2s ease',
+                  background:     loading
+                    ? 'var(--teal-600)'
+                    : 'linear-gradient(135deg, var(--teal-600), var(--teal-500))',
+                  boxShadow: loading ? 'none' : '0 6px 20px rgba(13,148,136,0.35)',
+                }}
+              >
+                {loading
+                  ? <><Loader2 size={18} style={{ animation: 'spin 0.7s linear infinite' }} /> Saving…</>
+                  : <><Save size={18} /> Save Profile Changes</>
+                }
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </>
   );
 };
 

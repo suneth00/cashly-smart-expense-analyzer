@@ -1,8 +1,12 @@
 import { Edit2, Trash2, Calendar, CreditCard, Tag, Receipt } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { formatCurrency } from '../utils/currencyUtils';
 
 const ExpenseTable = ({ expenses, loading, onEdit, onDelete }) => {
   const { isDark } = useTheme();
+  const { user } = useContext(AuthContext);
 
   const cardStyle = {
     background: 'var(--bg-card)',
@@ -90,14 +94,14 @@ const ExpenseTable = ({ expenses, loading, onEdit, onDelete }) => {
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 <td className="py-4 px-6">
-                  <p className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>{expense.title}</p>
+                  <p className="font-bold text-base capitalize" style={{ color: 'var(--text-primary)' }}>{expense.title}</p>
                   <p className="text-xs font-semibold mt-1 flex items-center gap-1.5 md:hidden" style={{ color: 'var(--text-faint)' }}>
                     <Calendar size={12} /> {new Date(expense.date).toLocaleDateString()}
                   </p>
                 </td>
                 <td className="py-4 px-6">
                   <span className="font-black text-lg" style={{ color: 'var(--text-primary)' }}>
-                    ${expense.amount.toFixed(2)}
+                    {formatCurrency(expense.amount, user?.currency)}
                   </span>
                   <p className="text-xs font-semibold mt-1 flex items-center gap-1.5" style={{ color: 'var(--text-faint)' }}>
                     <CreditCard size={12} /> {expense.paymentMethod}
@@ -117,30 +121,58 @@ const ExpenseTable = ({ expenses, loading, onEdit, onDelete }) => {
                   </span>
                 </td>
                 <td className="py-4 px-6 text-right">
-                  <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center justify-end gap-2">
+                    {/* Edit button */}
                     <button
                       onClick={() => onEdit(expense)}
-                      className="p-2 rounded-xl transition-colors"
-                      style={{ color: 'var(--teal-500)', background: 'var(--bg-subtle)', border: '1px solid var(--border-card)' }}
-                      onMouseEnter={e => e.currentTarget.style.background = isDark ? '#183838' : '#ccfbf1'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-subtle)'}
-                      title="Edit"
+                      title="Edit expense"
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: '34px', height: '34px', borderRadius: '10px',
+                        background: 'var(--bg-subtle)',
+                        border: '1px solid var(--border-card)',
+                        color: 'var(--teal-500)',
+                        cursor: 'pointer',
+                        transition: 'all 0.18s ease',
+                        flexShrink: 0,
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = isDark ? '#183838' : '#ccfbf1';
+                        e.currentTarget.style.borderColor = 'var(--teal-500)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'var(--bg-subtle)';
+                        e.currentTarget.style.borderColor = 'var(--border-card)';
+                      }}
                     >
-                      <Edit2 size={17} />
+                      <Edit2 size={15} />
                     </button>
+                    {/* Delete button */}
                     <button
                       onClick={() => onDelete(expense._id)}
-                      className="p-2 rounded-xl transition-colors"
+                      title="Delete expense"
                       style={{
-                        color: isDark ? '#f87171' : '#dc2626',
-                        background: isDark ? 'rgba(239,68,68,0.12)' : '#fee2e2',
-                        border: `1px solid ${isDark ? 'rgba(248,113,113,0.28)' : '#fecaca'}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: '34px', height: '34px', borderRadius: '10px',
+                        background: isDark ? 'rgba(239,68,68,0.08)' : '#fef2f2',
+                        border: `1px solid ${isDark ? 'rgba(248,113,113,0.20)' : '#fecaca'}`,
+                        color: isDark ? '#f87171' : '#ef4444',
+                        cursor: 'pointer',
+                        transition: 'all 0.18s ease',
+                        flexShrink: 0,
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = isDark ? 'rgba(239,68,68,0.20)' : '#fecaca'}
-                      onMouseLeave={e => e.currentTarget.style.background = isDark ? 'rgba(239,68,68,0.12)' : '#fee2e2'}
-                      title="Delete"
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = isDark ? 'rgba(239,68,68,0.22)' : '#fee2e2';
+                        e.currentTarget.style.borderColor = isDark ? 'rgba(248,113,113,0.50)' : '#fca5a5';
+                        e.currentTarget.style.transform = 'scale(1.08)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = isDark ? 'rgba(239,68,68,0.08)' : '#fef2f2';
+                        e.currentTarget.style.borderColor = isDark ? 'rgba(248,113,113,0.20)' : '#fecaca';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
                     >
-                      <Trash2 size={17} />
+                      <Trash2 size={15} />
                     </button>
                   </div>
                 </td>

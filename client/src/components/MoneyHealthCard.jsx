@@ -1,140 +1,218 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../api/axios';
-import { Activity, CheckCircle, Info } from 'lucide-react';
+import { Activity, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+
+/* ── Status config ── */
+const STATUS_CONFIG = {
+  'Excellent':         { emoji: '🏆', label: 'Excellent!',        color: '#22c55e', bg: 'rgba(34,197,94,0.10)',  border: 'rgba(34,197,94,0.25)',  msg: 'Your finances are in great shape! Keep it up.' },
+  'Good':              { emoji: '✅', label: 'Good',              color: '#0d9488', bg: 'rgba(13,148,136,0.10)', border: 'rgba(13,148,136,0.25)', msg: 'You\'re doing well. A few small tweaks could make it even better.' },
+  'Needs Improvement': { emoji: '⚠️', label: 'Needs Improvement', color: '#f59e0b', bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.25)', msg: 'There\'s room to improve. Check the tips below to get on track.' },
+  'Risky':             { emoji: '🚨', label: 'Risky',             color: '#ef4444', bg: 'rgba(239,68,68,0.10)',  border: 'rgba(239,68,68,0.25)',  msg: 'Your spending needs attention. Act on the suggestions below.' },
+};
+
+const DEFAULT_CONFIG = { emoji: '📊', label: 'Unknown', color: 'var(--teal-500)', bg: 'rgba(13,148,136,0.08)', border: 'rgba(13,148,136,0.20)', msg: 'Add expenses and set your income to get a score.' };
 
 const MoneyHealthCard = () => {
-  const [data, setData] = useState(null);
+  const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error,   setError]   = useState(null);
 
   useEffect(() => {
-    const fetchHealth = async () => {
-      try {
-        const res = await axios.get('/analytics/money-health-score');
-        setData(res.data);
-      } catch (err) {
-        setError('Failed to load health score');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchHealth();
+    axios.get('/analytics/money-health-score')
+      .then(r => setData(r.data))
+      .catch(() => setError('Could not load your health score.'))
+      .finally(() => setLoading(false));
   }, []);
 
-  const cardStyle = {
-    background: 'var(--bg-card)',
-    border: '1px solid',
-    borderColor: 'var(--border-card, #d1fae5)',
-    borderRadius: '22px',
-    boxShadow: '0 1px 6px rgba(13,148,136,0.07)',
-    padding: '28px 24px',
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    transition: 'background 0.3s ease, border-color 0.3s ease',
-  };
+  if (loading) return (
+    <div className="cashly-card" style={{ borderRadius: '22px', padding: '28px', minHeight: '420px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: '3px solid var(--border-card)', borderTopColor: 'var(--teal-500)', animation: 'mh-spin 0.8s linear infinite' }} />
+      <style>{`@keyframes mh-spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
-  if (loading) {
-    return (
-      <div style={cardStyle} className="items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-4" style={{ borderColor: 'var(--teal-600)' }} />
+  if (error || !data) return (
+    <div className="cashly-card" style={{ borderRadius: '22px', padding: '28px', minHeight: '420px', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+      <div>
+        <p style={{ fontSize: '32px', marginBottom: '8px' }}>😕</p>
+        <p style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '14px' }}>{error || 'No score yet'}</p>
+        <p style={{ fontSize: '12px', color: 'var(--text-faint)', marginTop: '4px' }}>Add expenses and set your income in Profile to generate a score.</p>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (error || !data) {
-    return (
-      <div style={cardStyle} className="items-center justify-center min-h-[400px]">
-        <span className="font-bold" style={{ color: 'var(--text-muted)' }}>{error || 'No data available'}</span>
-      </div>
-    );
-  }
+  const cfg   = STATUS_CONFIG[data.status] || DEFAULT_CONFIG;
+  const score = Math.min(100, Math.max(0, data.score || 0));
 
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case 'Excellent':        return { color: '#065f46', bg: '#dcfce7', border: '#86efac', stroke: '#22c55e' };
-      case 'Good':             return { color: 'var(--teal-700)', bg: '#ccfbf1', border: '#5eead4', stroke: 'var(--teal-500)' };
-      case 'Needs Improvement':return { color: '#92400e', bg: '#fef3c7', border: '#fcd34d', stroke: '#f59e0b' };
-      case 'Risky':            return { color: '#991b1b', bg: '#fee2e2', border: '#fca5a5', stroke: '#ef4444' };
-      default:                 return { color: 'var(--text-muted)', bg: '#f9fafb', border: '#e5e7eb', stroke: '#9ca3af' };
-    }
-  };
-
-  const s = getStatusStyle(data.status);
+  /* Score bar zones */
+  const zones = [
+    { pct: 40, color: '#ef4444', label: 'Risky' },
+    { pct: 30, color: '#f59e0b', label: 'Fair' },
+    { pct: 30, color: '#22c55e', label: 'Great' },
+  ];
 
   return (
-    <div style={cardStyle} className="relative overflow-hidden group">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8 relative z-10">
-        <h3 className="text-xl font-bold flex items-center gap-3" style={{ color: 'var(--text-primary)' }}>
-          <div className="p-2.5 rounded-2xl" style={{ background: '#ccfbf1', color: 'var(--teal-600)' }}>
-            <Activity size={22} />
-          </div>
-          Health Score
-        </h3>
-        <span
-          className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest"
-          style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}
-        >
-          {data.status}
-        </span>
-      </div>
+    <>
+      <style>{`
+        @keyframes mh-spin    { to { transform: rotate(360deg); } }
+        @keyframes mh-grow    { from { stroke-dashoffset: 527.7; } }
+        @keyframes mh-slideIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .mh-sug:hover { background: rgba(13,148,136,0.06) !important; }
+      `}</style>
 
-      {/* Score Ring */}
-      <div className="flex items-center justify-center mb-8 relative z-10">
-        <div className="relative flex items-center justify-center group-hover:scale-105 transition-transform duration-500 drop-shadow-md">
-          <svg className="w-48 h-48 transform -rotate-90">
-            <circle cx="96" cy="96" r="84" strokeWidth="14" fill="none" stroke="var(--bg-subtle)" />
-            <circle
-              cx="96" cy="96" r="84"
-              strokeWidth="14" fill="none"
-              stroke={s.stroke}
-              strokeDasharray="527.7"
-              strokeDashoffset={527.7 - (527.7 * data.score) / 100}
-              strokeLinecap="round"
-              style={{ transition: 'stroke-dashoffset 1.5s ease-out' }}
-            />
-          </svg>
-          <div className="absolute flex flex-col items-center justify-center">
-            <span className="text-6xl font-black tracking-tighter" style={{ color: s.stroke }}>{data.score}</span>
-            <span className="text-xs font-black uppercase tracking-widest mt-1" style={{ color: 'var(--text-faint)' }}>/ 100</span>
+      <div className="cashly-card" style={{
+        borderRadius: '22px', padding: '28px',
+        display: 'flex', flexDirection: 'column', gap: '16px',
+        animation: 'mh-slideIn 0.3s ease',
+      }}>
+
+        {/* ── Header ── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: '36px', height: '36px', borderRadius: '11px',
+              background: 'rgba(13,148,136,0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--teal-600)',
+            }}>
+              <Activity size={18} />
+            </div>
+            <div>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: '15px', color: 'var(--text-primary)' }}>
+                Financial Health Score
+              </p>
+              <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                Your finances rated out of 100
+              </p>
+            </div>
+          </div>
+          <span style={{
+            padding: '5px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 800,
+            background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+          }}>
+            {cfg.emoji} {cfg.label}
+          </span>
+        </div>
+
+        {/* ── Score Ring ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="160" height="160" style={{ transform: 'rotate(-90deg)' }}>
+              {/* Track */}
+              <circle cx="80" cy="80" r="68" strokeWidth="12" fill="none" stroke="var(--bg-subtle)" />
+              {/* Progress */}
+              <circle
+                cx="80" cy="80" r="68"
+                strokeWidth="12" fill="none"
+                stroke={cfg.color}
+                strokeDasharray="427.3"
+                strokeDashoffset={427.3 - (427.3 * score) / 100}
+                strokeLinecap="round"
+                style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1)', animation: 'mh-grow 1.4s ease' }}
+              />
+            </svg>
+            <div style={{
+              position: 'absolute', textAlign: 'center',
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+            }}>
+              <span style={{ fontSize: '40px', fontWeight: 900, color: cfg.color, letterSpacing: '-0.03em', lineHeight: 1 }}>
+                {score}
+              </span>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-faint)', letterSpacing: '0.06em' }}>
+                / 100
+              </span>
+            </div>
+          </div>
+
+        {/* Status message */}
+          <p style={{
+            margin: 0, textAlign: 'center', fontSize: '13px', fontWeight: 600,
+            color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: '240px',
+          }}>
+            {cfg.msg}
+          </p>
+        </div>
+
+        {/* ── Colour-zone score bar — grouped tight below the dial ── */}
+        <div style={{ marginTop: '-4px' }}>
+          <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Where you sit on the scale
+          </p>
+          <div style={{ position: 'relative', height: '12px', borderRadius: '999px', overflow: 'visible', display: 'flex' }}>
+            <div style={{ width: '40%', background: '#ef4444', borderRadius: '999px 0 0 999px' }} />
+            <div style={{ width: '30%', background: '#f59e0b' }} />
+            <div style={{ width: '30%', background: '#22c55e', borderRadius: '0 999px 999px 0' }} />
+            {/* Marker */}
+            <div style={{
+              position: 'absolute',
+              left: `calc(${score}% - 8px)`,
+              top: '-4px',
+              width: '20px', height: '20px',
+              borderRadius: '50%',
+              background: cfg.color,
+              border: '3px solid var(--bg-card)',
+              boxShadow: `0 0 0 2px ${cfg.color}`,
+              transition: 'left 1.4s cubic-bezier(0.4,0,0.2,1)',
+              zIndex: 2,
+            }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+            {[
+              { label: '0 — Risky',   color: '#ef4444' },
+              { label: '40 — Fair',   color: '#f59e0b' },
+              { label: '70+ — Great', color: '#22c55e' },
+            ].map(z => (
+              <span key={z.label} style={{ fontSize: '10px', fontWeight: 700, color: z.color }}>{z.label}</span>
+            ))}
           </div>
         </div>
+
+        {/* ── What this means ── */}
+        <div style={{
+          padding: '14px 16px', borderRadius: '14px',
+          background: cfg.bg, border: `1px solid ${cfg.border}`,
+        }}>
+          <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: 800, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            💡 What this score means
+          </p>
+          <p style={{ margin: 0, fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            {score >= 80 && 'You\'re spending within your income, saving consistently, and your habits are solid. Nothing urgent to fix!'}
+            {score >= 60 && score < 80 && 'You\'re generally on track, but there are some areas to watch — like your monthly spending vs income ratio.'}
+            {score >= 40 && score < 60 && 'Your spending is getting close to your income limits. Try to cut back in your top spending categories.'}
+            {score < 40 && 'Your spending is outpacing your income or you haven\'t set up your budget yet. Start by setting your monthly income in Profile.'}
+          </p>
+        </div>
+
+        {/* ── Breakdown checklist ── */}
+        {data.suggestions?.length > 0 && (
+          <div style={{
+            borderRadius: '16px', padding: '16px',
+            background: 'var(--bg-subtle)', border: '1px solid var(--border-card)',
+          }}>
+            <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 800, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Score Breakdown
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {data.suggestions.map((sug, i) => (
+                <div key={i} className="mh-sug" style={{
+                  display: 'flex', alignItems: 'flex-start', gap: '10px',
+                  padding: '8px 10px', borderRadius: '10px',
+                  background: 'transparent', transition: 'background 0.15s ease',
+                }}>
+                  {data.status === 'Excellent' || data.status === 'Good'
+                    ? <CheckCircle size={16} style={{ color: '#22c55e', flexShrink: 0, marginTop: '2px' }} />
+                    : <AlertTriangle size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: '2px' }} />
+                  }
+                  <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    {sug}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Explanation */}
-      <p className="text-sm font-semibold mb-8 text-center leading-relaxed px-2 relative z-10" style={{ color: 'var(--text-muted)' }}>
-        {data.explanation}
-      </p>
-
-      {/* Breakdown */}
-      <div
-        className="flex-1 rounded-2xl p-5 relative z-10"
-        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-card, #d1fae5)' }}
-      >
-        <h4 className="text-xs font-black uppercase tracking-widest mb-4" style={{ color: 'var(--text-faint)' }}>
-          Score Breakdown
-        </h4>
-        <ul className="space-y-3">
-          {data.suggestions.map((sug, i) => (
-            <li key={i} className="flex items-start gap-3 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-              {data.status === 'Excellent' ? (
-                <CheckCircle size={17} className="shrink-0 mt-0.5" style={{ color: '#22c55e' }} />
-              ) : (
-                <Info size={17} className="shrink-0 mt-0.5" style={{ color: 'var(--teal-500)' }} />
-              )}
-              <span className="leading-relaxed">{sug}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Decorative corner blob */}
-      <div
-        className="absolute -top-10 -right-10 w-40 h-40 rounded-full blur-3xl opacity-10 pointer-events-none"
-        style={{ background: s.stroke }}
-      />
-    </div>
+    </>
   );
 };
 
