@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import axios from '../api/axios';
 import { useTheme } from '../context/ThemeContext';
@@ -15,7 +15,7 @@ const getInitialFormData = (initialData, voiceData) => ({
   notes: initialData?.notes || '',
 });
 
-const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
+const ExpenseForm = ({ initialData, voiceData, onSuccess, topContent }) => {
   const { isDark } = useTheme();
   const { user } = useContext(AuthContext);
   const currency = user?.currency || '$';
@@ -26,6 +26,18 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!voiceData) return;
+
+    setFormData((current) => ({
+      ...current,
+      title: voiceData.title || current.title,
+      amount: voiceData.amount || current.amount,
+      category: voiceData.category || current.category,
+      date: voiceData.date || current.date,
+    }));
+  }, [voiceData]);
 
   const categories = ['Food', 'Transport', 'Education', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other'];
   const paymentMethods = ['Cash', 'Credit Card', 'Debit Card', 'Bank Transfer', 'UPI', 'Other'];
@@ -105,6 +117,12 @@ const ExpenseForm = ({ initialData, voiceData, onSuccess }) => {
 
   return (
     <div style={wrapperStyle}>
+      {topContent && (
+        <div className="mb-6 pb-6" style={{ borderBottom: '1px solid var(--border-card)' }}>
+          {topContent}
+        </div>
+      )}
+
       {success && (
         <div
           className="mb-6 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold"
