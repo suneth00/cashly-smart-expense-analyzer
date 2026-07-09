@@ -149,12 +149,47 @@ npm run dev
 ---
 
 ## Deployment Guide
-1. **Database:** Ensure your MongoDB Atlas IP Access List is set to `0.0.0.0/0` to allow external connections.
-2. **Backend:** Deploy the `server` folder to a hosting provider like Render, Heroku, or Railway. Ensure you add the `.env` variables to their dashboard.
-3. **Frontend:** 
-   - Update `client/src/api/axios.js` to point `baseURL` to your deployed backend URL.
-   - Run `npm run build` in the client folder.
-   - Deploy the `client/dist` folder to Vercel, Netlify, or GitHub Pages.
+### Backend on Render
+Create a Render Web Service from this repository with these settings:
+
+```text
+Root Directory: server
+Build Command: npm install
+Start Command: npm start
+```
+
+Add these environment variables in Render:
+
+```env
+NODE_ENV=production
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_key
+CORS_ORIGIN=https://your-vercel-app.vercel.app
+```
+
+Render provides `PORT` automatically. The backend also supports `CLIENT_URL`, `FRONTEND_URL`, or comma-separated `CORS_ORIGIN` values for allowed frontend origins.
+
+### Frontend on Vercel
+Create a Vercel project from this repository with these settings:
+
+```text
+Root Directory: client
+Build Command: npm run build
+Output Directory: dist
+```
+
+Add this environment variable in Vercel:
+
+```env
+VITE_API_URL=https://cashly-smart-expense-analyzer.onrender.com/api
+```
+
+After Vercel gives you the final frontend URL, add it to Render's `CORS_ORIGIN` value and redeploy the backend if needed.
+
+### Deployment Checks
+- `https://cashly-smart-expense-analyzer.onrender.com/` should show `CASHLY Backend API is running`.
+- `https://cashly-smart-expense-analyzer.onrender.com/api/test` should return `{ "message": "CASHLY API is running" }`.
+- The frontend should build successfully with `npm run build` from the `client` directory.
 
 ---
 

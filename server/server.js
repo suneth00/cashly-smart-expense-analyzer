@@ -17,8 +17,35 @@ const ocrRoutes = require('./routes/ocrRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://cashly-smart-expense-analyzer.vercel.app',
+  ...(process.env.CLIENT_URL || '').split(','),
+  ...(process.env.FRONTEND_URL || '').split(','),
+  ...(process.env.CORS_ORIGIN || '').split(','),
+]
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const isAllowedVercelOrigin = (origin) => {
+  try {
+    return new URL(origin).hostname.endsWith('.vercel.app');
+  } catch {
+    return false;
+  }
+};
+
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || isAllowedVercelOrigin(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
