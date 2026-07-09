@@ -32,7 +32,7 @@ const ProtectedRoute = () => {
         <Navbar toggleMenu={() => setIsMobileMenuOpen(true)} />
 
         {/* Page content */}
-        <main className="min-w-0 flex-1 overflow-x-hidden custom-scrollbar" style={{ background: 'var(--bg-main)' }}>
+        <main className="min-w-0 flex-1 overflow-x-hidden" style={{ background: 'var(--bg-main)' }}>
           <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
             <Outlet />
           </div>

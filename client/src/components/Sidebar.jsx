@@ -70,7 +70,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           shadow-2xl
           transition-all duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:sticky lg:top-0 lg:translate-x-0 lg:shrink-0 lg:shadow-none
+          lg:sticky lg:top-0 lg:bottom-auto lg:left-auto lg:translate-x-0 lg:shrink-0 lg:shadow-none
         `}
         style={{ background: 'var(--sidebar-bg)' }}
       >
@@ -124,7 +124,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         </div>
 
         {/* ── Nav links ── */}
-        <nav className="flex-1 px-3 pb-4 space-y-1 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 px-3 pb-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.name}
