@@ -3,6 +3,7 @@ import { Navigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { AlertCircle, Loader2, Leaf, TrendingUp, ShieldCheck } from 'lucide-react';
 import cashlyLogo from '../assets/cashly-logo.png';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 
 const Login = () => {
   const { token, login } = useContext(AuthContext);
@@ -127,6 +128,14 @@ const Login = () => {
                 <AlertCircle size={18} /> <span>{error}</span>
               </div>
             )}
+
+            <GoogleLoginButton setError={setError} setIsLoading={setIsLoading} disabled={isLoading} />
+
+            <div className="flex items-center gap-3 my-6">
+              <div className="h-px flex-1" style={{ background: '#d1fae5' }} />
+              <span className="text-xs font-bold uppercase" style={{ color: 'var(--text-muted)' }}>or</span>
+              <div className="h-px flex-1" style={{ background: '#d1fae5' }} />
+            </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>

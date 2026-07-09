@@ -107,6 +107,14 @@ body {
   border-right: 1px solid var(--sidebar-border);
 }
 
+.cashly-sidebar-nav {
+  scrollbar-width: none;
+}
+
+.cashly-sidebar-nav::-webkit-scrollbar {
+  display: none;
+}
+
 /* ── Cashly Nav Item ── */
 .cashly-nav-item {
   display: flex;

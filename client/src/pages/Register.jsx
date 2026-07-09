@@ -3,6 +3,7 @@ import { Navigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { AlertCircle, Loader2, Target, Sparkles, Leaf } from 'lucide-react';
 import cashlyLogo from '../assets/cashly-logo.png';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 
 const Register = () => {
   const { token, register } = useContext(AuthContext);
@@ -11,8 +12,6 @@ const Register = () => {
     name: '',
     email: '',
     password: '',
-    monthlyIncome: '',
-    savingsGoal: ''
   });
 
   const [error, setError] = useState(null);
@@ -31,11 +30,7 @@ const Register = () => {
     setError(null);
     setIsLoading(true);
     try {
-      await register({
-        ...formData,
-        monthlyIncome: Number(formData.monthlyIncome) || 0,
-        savingsGoal: Number(formData.savingsGoal) || 0
-      });
+      await register(formData);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to register. Please try again.');
     } finally {
@@ -156,6 +151,14 @@ const Register = () => {
               </div>
             )}
 
+            <GoogleLoginButton setError={setError} setIsLoading={setIsLoading} disabled={isLoading} />
+
+            <div className="flex items-center gap-3 my-6">
+              <div className="h-px flex-1" style={{ background: '#d1fae5' }} />
+              <span className="text-xs font-bold uppercase" style={{ color: 'var(--text-muted)' }}>or</span>
+              <div className="h-px flex-1" style={{ background: '#d1fae5' }} />
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label style={labelStyle}>Full Name</label>
@@ -177,23 +180,6 @@ const Register = () => {
                   type="password" name="password" value={formData.password} onChange={handleChange} required minLength="6"
                   style={inputStyle} placeholder="••••••••" className="input-teal"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label style={labelStyle}>Monthly Income</label>
-                  <input
-                    type="number" name="monthlyIncome" value={formData.monthlyIncome} onChange={handleChange}
-                    style={inputStyle} placeholder="$0" className="input-teal"
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Savings Goal</label>
-                  <input
-                    type="number" name="savingsGoal" value={formData.savingsGoal} onChange={handleChange}
-                    style={inputStyle} placeholder="$0" className="input-teal"
-                  />
-                </div>
               </div>
 
               <button

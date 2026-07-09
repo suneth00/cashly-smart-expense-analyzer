@@ -124,7 +124,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         </div>
 
         {/* ── Nav links ── */}
-        <nav className="flex-1 px-3 pb-4 space-y-1 overflow-y-auto">
+        <nav className="cashly-sidebar-nav flex-1 px-3 pb-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.name}

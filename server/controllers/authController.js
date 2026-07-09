@@ -1,5 +1,8 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Generate JWT
 const generateToken = (id) => {
@@ -8,12 +11,24 @@ const generateToken = (id) => {
   });
 };
 
+const sendAuthResponse = (res, statusCode, user) => {
+  res.status(statusCode).json({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    monthlyIncome: user.monthlyIncome,
+    savingsGoal: user.savingsGoal,
+    currency: user.currency,
+    token: generateToken(user._id)
+  });
+};
+
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password, monthlyIncome, savingsGoal } = req.body;
+    const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Please add all required fields' });
@@ -30,21 +45,11 @@ const registerUser = async (req, res) => {
     const user = await User.create({
       name,
       email,
-      password,
-      monthlyIncome,
-      savingsGoal
+      password
     });
 
     if (user) {
-      res.status(201).json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        monthlyIncome: user.monthlyIncome,
-        savingsGoal: user.savingsGoal,
-        currency: user.currency,
-        token: generateToken(user._id)
-      });
+      sendAuthResponse(res, 201, user);
     } else {
       res.status(400).json({ message: 'Invalid user data' });
     }
@@ -67,21 +72,86 @@ const loginUser = async (req, res) => {
     // Check for user email and include password for comparison
     const user = await User.findOne({ email }).select('+password');
 
-    if (user && (await user.matchPassword(password))) {
-      res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        monthlyIncome: user.monthlyIncome,
-        savingsGoal: user.savingsGoal,
-        currency: user.currency,
-        token: generateToken(user._id)
-      });
+    if (user && user.password && (await user.matchPassword(password))) {
+      sendAuthResponse(res, 200, user);
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Authenticate or register a user with Google
+// @route   POST /api/auth/google
+// @access  Public
+const googleLoginUser = async (req, res) => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential) {
+      return res.status(400).json({ message: 'Google credential is required' });
+    }
+
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      return res.status(500).json({ message: 'Google OAuth is not configured' });
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload?.email || !payload?.sub) {
+      return res.status(401).json({ message: 'Invalid Google account' });
+    }
+
+    if (!payload.email_verified) {
+      return res.status(401).json({ message: 'Google email is not verified' });
+    }
+
+    let user = await User.findOne({
+      $or: [
+        { googleId: payload.sub },
+        { email: payload.email }
+      ]
+    }).select('+password');
+
+    if (user) {
+      let shouldSave = false;
+
+      if (!user.googleId) {
+        user.googleId = payload.sub;
+        shouldSave = true;
+      }
+
+      if (!user.authProvider) {
+        user.authProvider = user.password ? 'local' : 'google';
+        shouldSave = true;
+      }
+
+      if (!user.name && payload.name) {
+        user.name = payload.name;
+        shouldSave = true;
+      }
+
+      if (shouldSave) {
+        await user.save();
+      }
+    } else {
+      user = await User.create({
+        name: payload.name || payload.email.split('@')[0],
+        email: payload.email,
+        googleId: payload.sub,
+        authProvider: 'google'
+      });
+    }
+
+    sendAuthResponse(res, 200, user);
+  } catch (error) {
+    res.status(401).json({ message: 'Google login failed' });
   }
 };
 
@@ -154,6 +224,7 @@ const updateUserProfile = async (req, res) => {
 module.exports = {
   registerUser,
   loginUser,
+  googleLoginUser,
   getUserProfile,
   updateUserProfile
 };

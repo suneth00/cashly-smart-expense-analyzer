@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { SearchProvider } from './context/SearchContext';
@@ -16,11 +17,14 @@ import Subscription from './pages/Subscription';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
   return (
     <ThemeProvider>
       <SearchProvider>
       <AuthProvider>
-        <Router>
+        <GoogleOAuthProvider clientId={googleClientId}>
+          <Router>
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
@@ -38,7 +42,8 @@ function App() {
               <Route path="/upgrade" element={<Subscription />} />
             </Route>
           </Routes>
-        </Router>
+          </Router>
+        </GoogleOAuthProvider>
       </AuthProvider>
       </SearchProvider>
     </ThemeProvider>
@@ -46,4 +51,3 @@ function App() {
 }
 
 export default App;
-
