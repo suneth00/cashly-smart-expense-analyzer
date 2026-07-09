@@ -18,6 +18,12 @@ import { formatCurrency } from '../utils/currencyUtils';
 
 /* ── helpers ── */
 const fmt = (n, currency, decimals = 2) => formatCurrency(n, currency, { decimals });
+const fmtAxis = (n, currency = '$') => {
+  const value = Number(n) || 0;
+  if (Math.abs(value) >= 1000000) return `${currency}${(value / 1000000).toFixed(1)}M`;
+  if (Math.abs(value) >= 1000) return `${currency}${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k`;
+  return `${currency}${value}`;
+};
 
 const Dashboard = () => {
   const { user }   = useContext(AuthContext);
@@ -99,6 +105,31 @@ const Dashboard = () => {
         .db-action:hover { transform: translateY(-2px); filter: brightness(1.08); }
         .db-tx:hover { background: var(--bg-subtle) !important; }
         .db-step:hover { border-color: var(--teal-500) !important; background: rgba(13,148,136,0.05) !important; }
+        .db-chart-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+          gap: 16px;
+          margin-bottom: 20px;
+          width: 100%;
+        }
+        .db-chart-pane,
+        .db-recent-pane {
+          min-width: 0;
+          width: 100%;
+          overflow: hidden;
+        }
+        @media (min-width: 1280px) {
+          .db-chart-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            align-items: stretch;
+          }
+          .db-chart-pane {
+            grid-column: span 2 / span 2;
+          }
+          .db-recent-pane {
+            grid-column: span 1 / span 1;
+          }
+        }
       `}</style>
 
       <div style={{ width: '100%', paddingBottom: '48px', animation: 'db-fadeIn 0.3s ease' }}>
@@ -437,12 +468,10 @@ const Dashboard = () => {
         {/* ════════════════════════════════════════
             SECTION 5 — CHART + RECENT TRANSACTIONS
         ════════════════════════════════════════ */}
-        <div style={{
-          display:'grid', gridTemplateColumns:'2fr 1fr',
-          gap:'16px', marginBottom:'20px',
-        }}>
+        <div className="db-chart-grid">
 
           {/* Spending Chart */}
+          <div className="db-chart-pane">
           <ChartCard
             title="Daily Spending — Last 30 Days"
             subtitle="Each bar = how much you spent on that day"
@@ -451,8 +480,8 @@ const Dashboard = () => {
               const avg = data.dailySpendingTrend.reduce((s,d) => s + d.total, 0) / data.dailySpendingTrend.length;
               const tickStep = Math.max(1, Math.ceil(data.dailySpendingTrend.length / 7));
               return (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={data.dailySpendingTrend} margin={{ top:16, right:12, left:-10, bottom:0 }}>
+                <ResponsiveContainer width="100%" height={320}>
+                  <AreaChart data={data.dailySpendingTrend} margin={{ top:20, right:30, left:10, bottom:20 }}>
                     <defs>
                       <linearGradient id="dbGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%"   stopColor="#0d9488" stopOpacity={0.35}/>
@@ -463,6 +492,10 @@ const Dashboard = () => {
                     <XAxis
                       dataKey="date" tickLine={false} axisLine={false} dy={8}
                       interval={tickStep-1}
+                      minTickGap={20}
+                      padding={{ left: 8, right: 18 }}
+                      height={42}
+                      tickMargin={10}
                       tick={{ fontSize:11, fill:'#9ca3af', fontWeight:700 }}
                       tickFormatter={v => {
                         const d = new Date(v);
@@ -470,18 +503,21 @@ const Dashboard = () => {
                       }}
                     />
                     <YAxis
-                      tickLine={false} axisLine={false} width={52}
+                      tickLine={false} axisLine={false} width={64}
+                      tickMargin={8}
                       tick={{ fontSize:11, fill:'#9ca3af', fontWeight:700 }}
-                      tickFormatter={v => v === 0 ? '' : `${user?.currency || '$'}${v}`}
+                      tickFormatter={v => v === 0 ? '' : fmtAxis(v, user?.currency)}
                     />
                     <ReferenceLine
                       y={avg} stroke={isDark ? '#2dd4bf' : '#0d9488'}
                       strokeDasharray="6 3" strokeWidth={1.5} strokeOpacity={0.6}
                       label={{ value:`Daily avg ${user?.currency || '$'}${avg.toFixed(0)}`, position:'insideTopRight',
-                               fontSize:10, fontWeight:700, fill: isDark ? '#2dd4bf' : '#0d9488', dy:-5 }}
+                               fontSize:10, fontWeight:700, fill: isDark ? '#2dd4bf' : '#0d9488', dx:-4, dy:-5 }}
                     />
                     <RechartsTooltip
+                      allowEscapeViewBox={{ x: false, y: false }}
                       cursor={{ stroke: isDark ? '#2dd4bf' : '#0d9488', strokeWidth:1.5, strokeDasharray:'4 4' }}
+                      wrapperStyle={{ maxWidth: 220, pointerEvents: 'none', zIndex: 5 }}
                       content={({ active, payload, label }) => {
                         if (!active || !payload?.length) return null;
                         const val  = payload[0].value;
@@ -491,13 +527,16 @@ const Dashboard = () => {
                           <div style={{
                             background: isDark ? '#0f2323' : '#fff',
                             border:`1px solid ${isDark ? '#1a3d3d' : '#ccfbf1'}`,
-                            borderRadius:'14px', padding:'12px 16px',
-                            boxShadow:'0 12px 32px rgba(13,148,136,0.18)', minWidth:'160px',
+                            borderRadius:'14px', padding:'10px 12px',
+                            boxShadow:'0 12px 32px rgba(13,148,136,0.18)',
+                            boxSizing:'border-box',
+                            maxWidth:'220px',
+                            whiteSpace:'normal',
                           }}>
                             <p style={{ margin:'0 0 4px', fontSize:11, fontWeight:800, color:isDark?'#4a7a76':'#9ca3af', textTransform:'uppercase', letterSpacing:'0.06em' }}>
                               {d.toLocaleDateString('en-US',{weekday:'short'})} · {d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
                             </p>
-                            <p style={{ margin:'0 0 4px', fontSize:22, fontWeight:900, color:'#0d9488', lineHeight:1 }}>
+                            <p style={{ margin:'0 0 4px', fontSize:20, fontWeight:900, color:'#0d9488', lineHeight:1 }}>
                               {fmt(val, user?.currency)}
                             </p>
                             <p style={{ margin:0, fontSize:11, fontWeight:700, color: diff>0?'#f87171':'#34d399' }}>
@@ -518,9 +557,10 @@ const Dashboard = () => {
               <EmptyChart label="No spending days recorded yet" sub="Add some expenses to see your spending trend" />
             )}
           </ChartCard>
+          </div>
 
           {/* Recent Transactions */}
-          <div className="cashly-card" style={{
+          <div className="cashly-card db-recent-pane" style={{
             borderRadius:'20px', display:'flex', flexDirection:'column', overflow:'hidden',
           }}>
             <div style={{
