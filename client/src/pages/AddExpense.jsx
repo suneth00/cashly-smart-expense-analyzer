@@ -63,8 +63,10 @@ const AddExpense = () => {
   const [parsedResult, setParsedResult] = useState(null);
   const [voiceDraft, setVoiceDraft] = useState(null);
   const [confirmedVoiceData, setConfirmedVoiceData] = useState(null);
+  const [voiceResultApplied, setVoiceResultApplied] = useState(false);
   const [supportError, setSupportError] = useState('');
 
+  const formSectionRef = useRef(null);
   const heardSpeechRef = useRef(false);
   const hadSpeechErrorRef = useRef(false);
   const finalTranscriptRef = useRef('');
@@ -94,6 +96,7 @@ const AddExpense = () => {
     setTranscript(finalText);
     setParsedResult(parsed);
     setVoiceDraft(parsed.fields);
+    setVoiceResultApplied(false);
   };
 
   const updateVoiceDraft = (field, value) => {
@@ -103,6 +106,20 @@ const AddExpense = () => {
   const useDetectedExpense = () => {
     if (!voiceDraft) return;
     setConfirmedVoiceData({ ...voiceDraft });
+    setVoiceResultApplied(true);
+
+    window.setTimeout(() => {
+      formSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  const clearVoiceResult = () => {
+    setTranscript('');
+    setInterimTranscript('');
+    setParsedResult(null);
+    setVoiceDraft(null);
+    setVoiceResultApplied(false);
+    setSupportError('');
   };
 
   const startListening = () => {
@@ -116,6 +133,7 @@ const AddExpense = () => {
     setInterimTranscript('');
     setParsedResult(null);
     setVoiceDraft(null);
+    setVoiceResultApplied(false);
     heardSpeechRef.current = false;
     hadSpeechErrorRef.current = false;
     finalTranscriptRef.current = '';
@@ -269,24 +287,71 @@ const AddExpense = () => {
 
         {(transcript || interimTranscript) && (
           <div
-            className="mt-6 p-5 rounded-2xl relative z-10"
+            className={`${voiceResultApplied ? 'mt-5 p-3' : 'mt-6 p-5'} rounded-2xl relative z-10`}
             style={{
               background: isDark ? 'rgba(15,35,35,0.92)' : 'rgba(255,255,255,0.85)',
               border: `1px solid ${isDark ? '#1a3d3d' : '#d1fae5'}`,
               backdropFilter: 'blur(8px)',
             }}
           >
-            <p className="text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-2" style={{ color: 'var(--teal-600)' }}>
+            <p className={`${voiceResultApplied ? 'text-[10px] mb-1' : 'text-[10px] mb-2'} font-black uppercase tracking-widest flex items-center gap-2`} style={{ color: 'var(--teal-600)' }}>
               <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--lime-400)' }} />
-              You said:
+              {voiceResultApplied ? 'Voice transcript' : 'You said:'}
             </p>
-            <p className="font-bold italic text-lg tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            <p className={`${voiceResultApplied ? 'text-sm line-clamp-2' : 'text-lg'} font-bold italic tracking-tight`} style={{ color: 'var(--text-primary)' }}>
               "{transcript || interimTranscript}"
             </p>
           </div>
         )}
 
-        {parsedResult && voiceDraft && (
+        {voiceResultApplied && (
+          <div
+            className="mt-5 p-4 rounded-2xl relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+            style={{
+              background: isDark ? 'rgba(34,197,94,0.13)' : '#dcfce7',
+              border: `1px solid ${isDark ? 'rgba(134,239,172,0.35)' : '#86efac'}`,
+              color: isDark ? '#86efac' : '#15803d',
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
+              <p className="text-sm font-bold">
+                Voice details added to the form. Please review and save.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 sm:justify-end">
+              <button
+                type="button"
+                onClick={clearVoiceResult}
+                className="px-3 py-2 rounded-xl text-xs font-black"
+                style={{
+                  background: isDark ? 'rgba(15,35,35,0.78)' : '#ffffff',
+                  border: `1px solid ${isDark ? 'rgba(134,239,172,0.28)' : '#86efac'}`,
+                  color: isDark ? '#bbf7d0' : '#15803d',
+                }}
+              >
+                Clear Voice Result
+              </button>
+              <button
+                type="button"
+                onClick={startListening}
+                disabled={isListening}
+                className="px-3 py-2 rounded-xl text-xs font-black"
+                style={{
+                  background: isDark ? 'rgba(15,35,35,0.78)' : '#ffffff',
+                  border: `1px solid ${isDark ? 'rgba(134,239,172,0.28)' : '#86efac'}`,
+                  color: isDark ? '#bbf7d0' : '#15803d',
+                  opacity: isListening ? 0.7 : 1,
+                  cursor: isListening ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
+
+        {parsedResult && voiceDraft && !voiceResultApplied && (
           <div
             className="mt-6 p-5 rounded-2xl relative z-10"
             style={{
@@ -396,7 +461,9 @@ const AddExpense = () => {
         )}
       </div>
 
-      <ExpenseForm key={formKey} voiceData={confirmedVoiceData} />
+      <div ref={formSectionRef} className="scroll-mt-6">
+        <ExpenseForm key={formKey} voiceData={confirmedVoiceData} />
+      </div>
     </div>
   );
 };
