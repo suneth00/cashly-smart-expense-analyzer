@@ -1,6 +1,38 @@
 const Expense = require('../models/Expense');
 const mongoose = require('mongoose');
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const startOfUtcDate = (date) => (
+  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+);
+
+const toUtcDateKey = (date) => {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const buildLastThirtyDayTrend = (dailyTotals, startDate, today) => {
+  const totalsByDate = dailyTotals.reduce((acc, item) => {
+    acc[item.date] = item.total;
+    return acc;
+  }, {});
+
+  return Array.from({ length: 30 }, (_, index) => {
+    const date = new Date(startDate.getTime() + index * MS_PER_DAY);
+    const dateKey = toUtcDateKey(date);
+
+    if (date > today) return null;
+
+    return {
+      date: dateKey,
+      total: totalsByDate[dateKey] || 0,
+    };
+  }).filter(Boolean);
+};
+
 // @desc    Get analytics summary
 // @route   GET /api/analytics/summary
 // @access  Private
@@ -40,21 +72,23 @@ const getAnalyticsSummary = async (req, res) => {
       .sort({ date: -1 })
       .limit(5);
 
-    // Daily spending trend (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // Daily spending trend (today - 29 days through today only)
+    const today = startOfUtcDate(new Date());
+    const tomorrow = new Date(today.getTime() + MS_PER_DAY);
+    const startOfTrend = new Date(today.getTime() - (29 * MS_PER_DAY));
     
-    const dailySpendingTrend = await Expense.aggregate([
-      { $match: { user: userId, date: { $gte: thirtyDaysAgo } } },
+    const dailyTotals = await Expense.aggregate([
+      { $match: { user: userId, date: { $gte: startOfTrend, $lt: tomorrow } } },
       { 
         $group: { 
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }, 
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: "UTC" } }, 
           total: { $sum: '$amount' } 
         } 
       },
       { $project: { date: '$_id', total: 1, _id: 0 } },
       { $sort: { date: 1 } }
     ]);
+    const dailySpendingTrend = buildLastThirtyDayTrend(dailyTotals, startOfTrend, today);
 
     // Monthly summary (for bar charts, e.g., last 6 months)
     const sixMonthsAgo = new Date();

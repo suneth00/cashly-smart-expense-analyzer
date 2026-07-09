@@ -24,6 +24,71 @@ const fmtAxis = (n, currency = '$') => {
   if (Math.abs(value) >= 1000) return `${currency}${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k`;
   return `${currency}${value}`;
 };
+const toLocalDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+const addLocalDays = (date, days) => (
+  new Date(date.getFullYear(), date.getMonth(), date.getDate() + days)
+);
+const parseChartDate = (value) => {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime())
+      ? null
+      : { date: new Date(value.getFullYear(), value.getMonth(), value.getDate()), key: toLocalDateKey(value) };
+  }
+
+  const datePart = String(value).split('T')[0];
+  const match = datePart.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const date = new Date(year, month - 1, day);
+    if (
+      date.getFullYear() !== year ||
+      date.getMonth() !== month - 1 ||
+      date.getDate() !== day
+    ) {
+      return null;
+    }
+
+    return { date, key: toLocalDateKey(date) };
+  }
+
+  const fallback = new Date(value);
+  return Number.isNaN(fallback.getTime())
+    ? null
+    : { date: new Date(fallback.getFullYear(), fallback.getMonth(), fallback.getDate()), key: toLocalDateKey(fallback) };
+};
+const formatChartDate = (value, options = { month: 'short', day: 'numeric' }) => {
+  const parsed = parseChartDate(value);
+  return parsed ? parsed.date.toLocaleDateString('en-US', options) : '';
+};
+const normalizeDailySpendingTrend = (trend = []) => {
+  const today = new Date();
+  const todayKey = toLocalDateKey(today);
+  const startKey = toLocalDateKey(addLocalDays(today, -29));
+
+  return trend
+    .map((item) => {
+      const parsed = parseChartDate(item.date);
+      if (!parsed) return null;
+
+      return {
+        ...item,
+        date: parsed.key,
+        total: Number(item.total) || 0,
+      };
+    })
+    .filter(Boolean)
+    .filter((item) => item.date >= startKey && item.date <= todayKey)
+    .sort((a, b) => a.date.localeCompare(b.date));
+};
 
 const Dashboard = () => {
   const { user }   = useContext(AuthContext);
@@ -88,6 +153,8 @@ const Dashboard = () => {
   if (total === 0)  steps.push({ icon: '📝', text: 'Add your first expense',              to: '/add-expense', done: false });
   else              steps.push({ icon: '✅', text: 'You\'re tracking expenses — great!',  to: '/expenses', done: true });
   if (income && total > 0) steps.push({ icon: '📊', text: 'Check your AI insights in Analytics', to: '/analytics', done: false });
+
+  const dailySpendingTrend = normalizeDailySpendingTrend(data.dailySpendingTrend);
 
   return (
     <>
@@ -476,12 +543,12 @@ const Dashboard = () => {
             title="Daily Spending — Last 30 Days"
             subtitle="Each bar = how much you spent on that day"
           >
-            {data.dailySpendingTrend.length > 0 ? (() => {
-              const avg = data.dailySpendingTrend.reduce((s,d) => s + d.total, 0) / data.dailySpendingTrend.length;
-              const tickStep = Math.max(1, Math.ceil(data.dailySpendingTrend.length / 7));
+            {dailySpendingTrend.length > 0 ? (() => {
+              const avg = dailySpendingTrend.reduce((s,d) => s + d.total, 0) / dailySpendingTrend.length;
+              const tickStep = Math.max(1, Math.ceil(dailySpendingTrend.length / 7));
               return (
                 <ResponsiveContainer width="100%" height={320}>
-                  <AreaChart data={data.dailySpendingTrend} margin={{ top:20, right:30, left:10, bottom:20 }}>
+                  <AreaChart data={dailySpendingTrend} margin={{ top:20, right:30, left:10, bottom:20 }}>
                     <defs>
                       <linearGradient id="dbGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%"   stopColor="#0d9488" stopOpacity={0.35}/>
@@ -497,10 +564,7 @@ const Dashboard = () => {
                       height={42}
                       tickMargin={10}
                       tick={{ fontSize:11, fill:'#9ca3af', fontWeight:700 }}
-                      tickFormatter={v => {
-                        const d = new Date(v);
-                        return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
-                      }}
+                      tickFormatter={v => formatChartDate(v)}
                     />
                     <YAxis
                       tickLine={false} axisLine={false} width={64}
@@ -522,7 +586,8 @@ const Dashboard = () => {
                         if (!active || !payload?.length) return null;
                         const val  = payload[0].value;
                         const diff = val - avg;
-                        const d    = new Date(label);
+                        const weekday = formatChartDate(label, { weekday:'short' });
+                        const dayLabel = formatChartDate(label);
                         return (
                           <div style={{
                             background: isDark ? '#0f2323' : '#fff',
@@ -534,7 +599,7 @@ const Dashboard = () => {
                             whiteSpace:'normal',
                           }}>
                             <p style={{ margin:'0 0 4px', fontSize:11, fontWeight:800, color:isDark?'#4a7a76':'#9ca3af', textTransform:'uppercase', letterSpacing:'0.06em' }}>
-                              {d.toLocaleDateString('en-US',{weekday:'short'})} · {d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+                              {weekday} · {dayLabel}
                             </p>
                             <p style={{ margin:'0 0 4px', fontSize:20, fontWeight:900, color:'#0d9488', lineHeight:1 }}>
                               {fmt(val, user?.currency)}
