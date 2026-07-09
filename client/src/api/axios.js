@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'https://cashly-smart-expense-analyzer.onrender.com/api',
 });
 
 // Add a request interceptor to inject the token
