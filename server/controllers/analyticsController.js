@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+// Normalizes dates to UTC midnight so chart dates do not drift by timezone.
 const startOfUtcDate = (date) => (
   new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
 );
@@ -15,6 +16,7 @@ const toUtcDateKey = (date) => {
 };
 
 const buildLastThirtyDayTrend = (dailyTotals, startDate, today) => {
+  // Creates 30 chart points and fills missing days with 0.
   const totalsByDate = dailyTotals.reduce((acc, item) => {
     acc[item.date] = item.total;
     return acc;
@@ -40,14 +42,14 @@ const getAnalyticsSummary = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Total expenses & amount
+    // Calculates the user's all-time total spending.
     const totalExpensesAggr = await Expense.aggregate([
       { $match: { user: userId } },
       { $group: { _id: null, totalAmount: { $sum: '$amount' } } }
     ]);
     const totalExpenses = totalExpensesAggr.length > 0 ? totalExpensesAggr[0].totalAmount : 0;
 
-    // Monthly spending (current month)
+    // Calculates spending from the first day of the current month.
     const currentDate = new Date();
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     
@@ -57,7 +59,7 @@ const getAnalyticsSummary = async (req, res) => {
     ]);
     const monthlySpending = monthlySpendingAggr.length > 0 ? monthlySpendingAggr[0].totalAmount : 0;
 
-    // Category summary
+    // Groups expenses by category for breakdown charts.
     const categorySummary = await Expense.aggregate([
       { $match: { user: userId } },
       { $group: { _id: '$category', total: { $sum: '$amount' } } },
@@ -67,12 +69,12 @@ const getAnalyticsSummary = async (req, res) => {
 
     const highestSpendingCategory = categorySummary.length > 0 ? categorySummary[0].category : 'N/A';
 
-    // Recent transactions (last 5)
+    // Shows the latest transactions on the dashboard.
     const recentTransactions = await Expense.find({ user: userId })
       .sort({ date: -1 })
       .limit(5);
 
-    // Daily spending trend (today - 29 days through today only)
+    // Builds the Daily Spending chart for today - 29 days through today only.
     const today = startOfUtcDate(new Date());
     const tomorrow = new Date(today.getTime() + MS_PER_DAY);
     const startOfTrend = new Date(today.getTime() - (29 * MS_PER_DAY));
@@ -90,7 +92,7 @@ const getAnalyticsSummary = async (req, res) => {
     ]);
     const dailySpendingTrend = buildLastThirtyDayTrend(dailyTotals, startOfTrend, today);
 
-    // Monthly summary (for bar charts, e.g., last 6 months)
+    // Groups recent spending by month for monthly chart summaries.
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
     sixMonthsAgo.setDate(1);
@@ -150,10 +152,11 @@ const getMoneyHealthScore = async (req, res) => {
     const currentTotal = currentMonthExpenses.reduce((acc, curr) => acc + curr.amount, 0);
     const prevTotal = prevMonthExpenses.reduce((acc, curr) => acc + curr.amount, 0);
 
+    // Starts at 100 and subtracts points when spending habits look risky.
     let score = 100;
     const suggestions = [];
 
-    // Rule 1: Spending vs Income
+    // Rule 1: compares current month spending against monthly income.
     if (income > 0) {
       const spendingRatio = currentTotal / income;
       if (spendingRatio > 0.8) {
@@ -168,13 +171,13 @@ const getMoneyHealthScore = async (req, res) => {
       suggestions.push("Set your monthly income in your profile for a more accurate health score.");
     }
 
-    // Rule 2: Savings Goal
+    // Rule 2: rewards users who set a savings goal.
     if (savings <= 0) {
       score -= 10;
       suggestions.push("Set a savings goal to stay motivated and build financial security.");
     }
 
-    // Rule 3: Category Distribution (Entertainment + Shopping)
+    // Rule 3: checks if fun/non-essential categories are too high.
     const funExpenses = currentMonthExpenses.filter(e => e.category === 'Entertainment' || e.category === 'Shopping');
     const funTotal = funExpenses.reduce((acc, curr) => acc + curr.amount, 0);
     if (currentTotal > 0 && (funTotal / currentTotal) > 0.3) {
@@ -182,13 +185,13 @@ const getMoneyHealthScore = async (req, res) => {
       suggestions.push("Entertainment and Shopping make up over 30% of your spending. Consider cutting back here.");
     }
 
-    // Rule 4: Spending Increase
+    // Rule 4: compares this month with last month.
     if (currentTotal > prevTotal && prevTotal > 0) {
       score -= 15;
       suggestions.push(`Your spending this month ($${currentTotal.toFixed(0)}) is higher than last month ($${prevTotal.toFixed(0)}).`);
     }
 
-    // Rule 5: Uncategorized/Other expenses count
+    // Rule 5: encourages proper categorization for better insights.
     const otherExpenses = currentMonthExpenses.filter(e => e.category === 'Other');
     if (currentMonthExpenses.length > 0 && (otherExpenses.length / currentMonthExpenses.length) > 0.2) {
       score -= 10;

@@ -2,13 +2,14 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 
-// Generate JWT
+// Creates the app's JWT after normal login, registration, or Google login.
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
 };
 
+// Sends the same login response shape for all authentication methods.
 const sendAuthResponse = (res, statusCode, user) => {
   res.status(statusCode).json({
     _id: user._id,
@@ -28,18 +29,19 @@ const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    // Registration requires only the basic local account fields.
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Please add all required fields' });
     }
 
-    // Check if user exists
+    // Prevents two accounts from using the same email.
     const userExists = await User.findOne({ email });
 
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Create user
+    // Creates the user; password hashing happens in the User model.
     const user = await User.create({
       name,
       email,
@@ -67,7 +69,7 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Please add email and password' });
     }
 
-    // Check for user email and include password for comparison
+    // Includes password only here so bcrypt can compare it during login.
     const user = await User.findOne({ email }).select('+password');
 
     if (user && user.password && (await user.matchPassword(password))) {
@@ -97,6 +99,7 @@ const googleLoginUser = async (req, res) => {
       return res.status(500).json({ message: 'Google OAuth is not configured on the server' });
     }
 
+    // Verifies the Google ID token on the backend before trusting the user.
     const googleClient = new OAuth2Client(googleClientId);
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
@@ -115,6 +118,7 @@ const googleLoginUser = async (req, res) => {
 
     const googleEmail = payload.email.toLowerCase();
 
+    // Logs in an existing user by googleId or email, otherwise creates one.
     let user = await User.findOne({
       $or: [
         { googleId: payload.sub },
@@ -125,6 +129,7 @@ const googleLoginUser = async (req, res) => {
     if (user) {
       let shouldSave = false;
 
+      // Links a Google account to an existing local account with the same email.
       if (!user.googleId) {
         user.googleId = payload.sub;
         shouldSave = true;
@@ -144,6 +149,7 @@ const googleLoginUser = async (req, res) => {
         await user.save();
       }
     } else {
+      // New Google users are saved without a local password.
       user = await User.create({
         name: payload.name || googleEmail.split('@')[0],
         email: googleEmail,

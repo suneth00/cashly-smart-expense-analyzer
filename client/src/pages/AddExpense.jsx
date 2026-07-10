@@ -53,6 +53,7 @@ const AddExpense = () => {
     }, 100);
   };
 
+  // Converts spoken text into expense fields and fills the main form.
   const applyParsedTranscript = (text) => {
     const finalText = text.trim();
     if (!finalText) return;
@@ -66,6 +67,7 @@ const AddExpense = () => {
     scrollToForm();
   };
 
+  // Clears all voice-related state after saving or resetting voice input.
   const clearVoiceResult = () => {
     setTranscript('');
     setInterimTranscript('');
@@ -75,10 +77,12 @@ const AddExpense = () => {
     setSupportError('');
   };
 
+  // After the user saves, the voice helper is reset for the next expense.
   const handleVoiceExpenseSaved = () => {
     clearVoiceResult();
   };
 
+  // Starts browser speech recognition and listens for one expense sentence.
   const startListening = () => {
     if (!SpeechRecognition) {
       setSupportError('Your browser does not support voice recognition. Please try Chrome or Edge.');
@@ -153,6 +157,7 @@ const AddExpense = () => {
     recognition.start();
   };
 
+  // This section is inserted at the top of the same Add Expense form card.
   const voiceAssistantContent = (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -287,6 +292,7 @@ const AddExpense = () => {
       </div>
 
       <div ref={formSectionRef} className="scroll-mt-28">
+        {/* The user still reviews and saves manually after voice fills the form. */}
         <ExpenseForm
           voiceData={confirmedVoiceData}
           onSuccess={voiceResultApplied ? handleVoiceExpenseSaved : undefined}

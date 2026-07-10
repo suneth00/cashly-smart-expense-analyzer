@@ -24,6 +24,7 @@ const ReceiptScanner = () => {
   };
 
   const pick = (f) => {
+    // Stores the selected receipt file and shows a local preview.
     setFile(f);
     setPreview(URL.createObjectURL(f));
     setOcrData(null);
@@ -45,6 +46,7 @@ const ReceiptScanner = () => {
     const formData = new FormData();
     formData.append('receiptImage', file);
     try {
+      // Sends the image to the backend OCR route for text extraction.
       const res = await axios.post('/ocr/receipt', formData);
       setOcrData(res.data);
     } catch (err) {
@@ -511,6 +513,7 @@ const ReceiptScanner = () => {
 
                 {/* Form */}
                 <div style={{ padding: '24px 28px', overflowY: 'auto' }}>
+                  {/* OCR fills the form, but the user confirms before saving. */}
                   <ExpenseForm
                     initialData={{ ...ocrData.suggestedExpense, _id: null }}
                     onSuccess={() => setSaved(true)}

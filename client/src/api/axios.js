@@ -1,10 +1,11 @@
 import axios from 'axios';
 
+// Uses the deployed backend URL from Vite env, or localhost during development.
 const instance = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
 });
 
-// Add a request interceptor to inject the token
+// Attaches the JWT token to every protected API request.
 instance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -18,7 +19,7 @@ instance.interceptors.request.use(
   }
 );
 
-// Add a response interceptor for global error handling
+// Handles common API errors in one place.
 instance.interceptors.response.use(
   (response) => response,
   (error) => {

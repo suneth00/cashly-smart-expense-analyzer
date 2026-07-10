@@ -5,6 +5,14 @@ import { AlertCircle, Loader2, Leaf, TrendingUp, ShieldCheck } from 'lucide-reac
 import cashlyLogo from '../assets/cashly-logo.png';
 import GoogleLoginButton from '../components/GoogleLoginButton';
 
+const authText = {
+  heading: '#0E2F35',
+  label: '#115e59',
+  helper: '#47615d',
+  link: '#0f766e',
+  input: '#12343B',
+};
+
 const Login = () => {
   const { token, login } = useContext(AuthContext);
   const [email, setEmail] = useState('');
@@ -21,6 +29,7 @@ const Login = () => {
     setError(null);
     setIsLoading(true);
     try {
+      // Sends email and password to the backend login route.
       await login(email, password);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to login. Please try again.');
@@ -112,12 +121,12 @@ const Login = () => {
             {/* Mobile logo */}
             <div className="flex items-center justify-center lg:justify-start gap-3 mb-8 lg:hidden">
               <img src={cashlyLogo} alt="CASHLY Logo" className="h-10 w-10 object-contain rounded-xl" />
-              <span className="text-xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>CASHLY</span>
+              <span className="text-xl font-black tracking-tight" style={{ color: authText.heading }}>CASHLY</span>
             </div>
 
             <div className="mb-10">
-              <h2 className="text-4xl font-black tracking-tight mb-2" style={{ color: 'var(--text-primary)' }}>Sign In</h2>
-              <p className="font-medium" style={{ color: 'var(--text-muted)' }}>Welcome back! Please enter your details.</p>
+              <h2 className="text-4xl font-black tracking-tight mb-2" style={{ color: authText.heading }}>Sign In</h2>
+              <p className="font-semibold" style={{ color: authText.helper }}>Welcome back! Please enter your details.</p>
             </div>
 
             {error && (
@@ -129,28 +138,29 @@ const Login = () => {
               </div>
             )}
 
+            {/* Google login returns a credential that the backend verifies. */}
             <GoogleLoginButton setError={setError} setIsLoading={setIsLoading} disabled={isLoading} />
 
             <div className="flex items-center gap-3 my-6">
               <div className="h-px flex-1" style={{ background: '#d1fae5' }} />
-              <span className="text-xs font-bold uppercase" style={{ color: 'var(--text-muted)' }}>or</span>
+              <span className="text-xs font-bold uppercase" style={{ color: authText.helper }}>or</span>
               <div className="h-px flex-1" style={{ background: '#d1fae5' }} />
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>
+                <label className="block text-sm font-bold mb-2" style={{ color: authText.label }}>
                   Email Address
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-5 py-4 rounded-2xl text-sm font-semibold transition-all placeholder-gray-400 input-teal"
+                  className="auth-input w-full px-5 py-4 rounded-2xl text-sm font-semibold transition-all input-teal"
                   style={{
                     border: '1.5px solid #d1fae5',
-                    background: 'var(--bg-subtle)',
-                    color: 'var(--text-primary)',
+                    background: '#f8fffe',
+                    color: authText.input,
                     outline: 'none',
                   }}
                   placeholder="you@example.com"
@@ -159,18 +169,18 @@ const Login = () => {
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-bold" style={{ color: 'var(--text-secondary)' }}>Password</label>
-                  <a href="#" className="text-xs font-bold hover:underline" style={{ color: 'var(--teal-600)' }}>Forgot password?</a>
+                  <label className="block text-sm font-bold" style={{ color: authText.label }}>Password</label>
+                  <a href="#" className="text-xs font-bold hover:underline" style={{ color: authText.link }}>Forgot password?</a>
                 </div>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-5 py-4 rounded-2xl text-sm font-semibold transition-all placeholder-gray-400 input-teal"
+                  className="auth-input w-full px-5 py-4 rounded-2xl text-sm font-semibold transition-all input-teal"
                   style={{
                     border: '1.5px solid #d1fae5',
-                    background: 'var(--bg-subtle)',
-                    color: 'var(--text-primary)',
+                    background: '#f8fffe',
+                    color: authText.input,
                     outline: 'none',
                   }}
                   placeholder="••••••••"
@@ -193,9 +203,9 @@ const Login = () => {
               </button>
             </form>
 
-            <p className="mt-10 text-center font-medium" style={{ color: 'var(--text-muted)' }}>
+            <p className="mt-10 text-center font-semibold" style={{ color: authText.helper }}>
               Don't have an account?{' '}
-              <Link to="/register" className="font-black hover:underline" style={{ color: 'var(--teal-600)' }}>
+              <Link to="/register" className="font-black hover:underline" style={{ color: authText.link }}>
                 Register here
               </Link>
             </p>

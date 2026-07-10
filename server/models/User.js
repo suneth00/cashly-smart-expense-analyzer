@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+// Stores account details, profile settings, and login provider information.
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -17,6 +18,7 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
+    // Google users do not need a local password.
     required: function() {
       return this.authProvider !== 'google';
     },
@@ -26,6 +28,7 @@ const userSchema = new mongoose.Schema({
   googleId: {
     type: String,
     unique: true,
+    // Sparse allows normal email/password users to have no googleId.
     sparse: true
   },
   authProvider: {
@@ -51,7 +54,7 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Encrypt password before saving
+// Hashes local account passwords before saving them to MongoDB.
 userSchema.pre('save', async function() {
   if (!this.isModified('password') || !this.password) {
     return;
@@ -60,7 +63,7 @@ userSchema.pre('save', async function() {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Match user entered password to hashed password in database
+// Compares the login password with the hashed password in the database.
 userSchema.methods.matchPassword = async function(enteredPassword) {
   if (!this.password) {
     return false;

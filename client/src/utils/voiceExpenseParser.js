@@ -8,6 +8,7 @@ const CATEGORY_KEYWORDS = {
   Health: ['doctor', 'medicine', 'pharmacy', 'hospital', 'health'],
 };
 
+// Converts spoken number words like "five hundred" into numeric values.
 const NUMBER_WORDS = {
   zero: 0,
   one: 1,
@@ -45,6 +46,8 @@ const SCALE_WORDS = {
 };
 
 const AMOUNT_TRIGGERS = ['spent', 'paid', 'pay', 'cost', 'costs', 'costed', 'add', 'expense', 'for'];
+
+// Words removed when generating a clean expense title from the transcript.
 const FILLER_WORDS = new Set([
   'i',
   'me',
@@ -105,6 +108,7 @@ const toLocalDateInput = (date) => {
 };
 
 const normalizeTranscript = (transcript) =>
+  // Cleans speech text so matching amounts, categories, and dates is easier.
   transcript
     .toLowerCase()
     .replace(/rs\./g, 'rs')
@@ -178,6 +182,7 @@ const parseNumberWordsAt = (tokens, start) => {
 };
 
 const findAmountCandidates = (text, tokens) => {
+  // Finds both digit amounts and spoken amounts from the transcript.
   const candidates = [];
 
   for (const match of text.matchAll(/\b\d+(?:\.\d{1,2})?\b/g)) {
@@ -205,6 +210,7 @@ const findAmountCandidates = (text, tokens) => {
 const chooseAmount = (candidates, tokens) => {
   if (candidates.length === 0) return null;
 
+  // Prefers amounts near words like "spent" or "paid".
   const tokenBeforeCandidate = (candidate, limit = 4) =>
     tokens
       .filter((token) => token.end <= candidate.start)
@@ -233,6 +239,7 @@ const chooseAmount = (candidates, tokens) => {
 };
 
 const detectCategory = (text) => {
+  // Matches keywords like "food" or "bus" to a CASHLY category.
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     if (keywords.some((keyword) => new RegExp(`\\b${keyword}\\b`, 'i').test(text))) {
       return { category, detected: true };
@@ -253,6 +260,7 @@ const closestWeekdayDate = (targetDay, today) => {
 };
 
 const detectDate = (text, today = new Date()) => {
+  // Detects simple date words such as today, yesterday, tomorrow, or weekdays.
   const date = new Date(today);
 
   if (/\byesterday\b/.test(text)) {
@@ -301,6 +309,7 @@ const removeAmountPhrases = (text, amounts) => {
 };
 
 const generateTitle = (text, amounts, category) => {
+  // Builds a readable title from the remaining useful words.
   const withoutAmount = removeAmountPhrases(text, amounts);
   const categoryName = category.toLowerCase();
   const titleWords = withoutAmount
@@ -318,6 +327,7 @@ const generateTitle = (text, amounts, category) => {
 };
 
 export const parseVoiceExpense = (transcript, options = {}) => {
+  // Main parser used by the Voice Assistant on the Add Expense page.
   const cleaned = normalizeTranscript(transcript || '');
   const today = options.today ? new Date(options.today) : new Date();
   const tokens = getTokenInfo(cleaned);

@@ -10,6 +10,7 @@ const ProtectedRoute = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   if (!token) {
+    // Sends guests to login before they can see private pages.
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -31,7 +32,7 @@ const ProtectedRoute = () => {
       <div className="flex min-h-screen flex-1 min-w-0 flex-col">
         <Navbar toggleMenu={() => setIsMobileMenuOpen(true)} />
 
-        {/* Page content */}
+        {/* Private page content is rendered here after JWT check passes. */}
         <main className="min-w-0 flex-1 overflow-x-hidden" style={{ background: 'var(--bg-main)' }}>
           <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
             <Outlet />

@@ -35,6 +35,7 @@ const path      = require('path');         // Node.js built-in: handles file/fol
 // sequence of steps, even though each step involves waiting for I/O.
 // =============================================================================
 const processReceipt = async (req, res) => {
+  // OCR suggests expense values; it does not save the expense automatically.
 
   // We declare 'worker' outside the try block so we can still access
   // it in the 'finally' block to shut it down and free memory —

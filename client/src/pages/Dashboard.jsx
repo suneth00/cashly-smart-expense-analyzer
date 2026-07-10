@@ -70,6 +70,7 @@ const formatChartDate = (value, options = { month: 'short', day: 'numeric' }) =>
   return parsed ? parsed.date.toLocaleDateString('en-US', options) : '';
 };
 const normalizeDailySpendingTrend = (trend = []) => {
+  // Keeps the Daily Spending chart inside the last 30 days only.
   const today = new Date();
   const todayKey = toLocalDateKey(today);
   const startKey = toLocalDateKey(addLocalDays(today, -29));
@@ -98,6 +99,7 @@ const Dashboard = () => {
   const [error,   setError]   = useState('');
 
   useEffect(() => {
+    // Fetches dashboard analytics summary from the backend.
     axios.get('/analytics/summary')
       .then(r => setData(r.data))
       .catch(() => setError('Failed to load dashboard data.'))
@@ -127,6 +129,7 @@ const Dashboard = () => {
   if (!data) return null;
 
   /* derived values */
+  // These values power the budget cards, progress bars, and savings summary.
   const income       = user?.monthlyIncome || 0;
   const savingsGoal  = user?.savingsGoal   || 0;
   const monthly      = data.monthlySpending || 0;
@@ -574,6 +577,7 @@ const Dashboard = () => {
 
           {/* Spending Chart */}
           <div className="db-chart-pane">
+          {/* Shows daily spending totals using responsive Recharts components. */}
           <ChartCard
             title="Daily Spending — Last 30 Days"
             subtitle="Each bar = how much you spent on that day"
@@ -758,6 +762,7 @@ const Dashboard = () => {
         {/* ════════════════════════════════════════
             SECTION 6 — CATEGORY BREAKDOWN
         ════════════════════════════════════════ */}
+        {/* Shows how the user's spending is divided by category. */}
         <CategoryBreakdownCard
           categorySummary={data.categorySummary}
           periodLabel="All time"

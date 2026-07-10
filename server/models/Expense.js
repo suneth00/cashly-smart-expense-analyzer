@@ -1,9 +1,11 @@
 const mongoose = require('mongoose');
 
+// Stores one expense and links it to the user who created it.
 const expenseSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
+    // This reference connects each expense to a User document.
     ref: 'User'
   },
   title: {
@@ -17,6 +19,7 @@ const expenseSchema = new mongoose.Schema({
   category: {
     type: String,
     required: [true, 'Please select a category'],
+    // Keeps categories consistent for charts and analytics.
     enum: ['Food', 'Transport', 'Education', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other']
   },
   paymentMethod: {

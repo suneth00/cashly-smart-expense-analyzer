@@ -26,6 +26,7 @@ const Expenses = () => {
   const fetchExpenses = async () => {
     setLoading(true);
     try {
+      // Loads the logged-in user's expenses from the backend.
       const res = await axios.get('/expenses');
       setExpenses(res.data);
     } catch (error) {
@@ -59,6 +60,7 @@ const Expenses = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this expense? This action cannot be undone.')) {
       try {
+        // Deletes the selected expense after user confirmation.
         await axios.delete(`/expenses/${id}`);
         setExpenses(expenses.filter(exp => exp._id !== id));
       } catch {
@@ -68,6 +70,7 @@ const Expenses = () => {
   };
 
   const handleEdit = (expense) => setEditingExpense(expense);
+  // Refreshes the list after a successful edit.
   const handleEditSuccess = () => { setEditingExpense(null); fetchExpenses(); };
 
   const handleSearchChange = (val) => {
@@ -80,6 +83,7 @@ const Expenses = () => {
     setSearch('');
   };
 
+  // Applies search, category filter, and sorting before rendering the table.
   let filtered = [...expenses];
   if (search)   filtered = filtered.filter(exp =>
     exp.title.toLowerCase().includes(search.toLowerCase()) ||

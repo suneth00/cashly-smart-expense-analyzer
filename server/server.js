@@ -3,10 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 
-// Connect to database
+// Connects the backend to MongoDB before handling API requests.
 connectDB();
 
-// Import routes
+// Imports route files for each main feature area.
 const testRoutes = require('./routes/testRoutes');
 const authRoutes = require('./routes/authRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
@@ -17,6 +17,7 @@ const ocrRoutes = require('./routes/ocrRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Lists frontend URLs that are allowed to call this backend.
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
@@ -37,7 +38,7 @@ const isAllowedVercelOrigin = (origin) => {
   }
 };
 
-// Middleware
+// Enables CORS so the Vercel frontend can access the Render backend.
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin) || isAllowedVercelOrigin(origin)) {
@@ -47,18 +48,22 @@ app.use(cors({
     return callback(new Error('Not allowed by CORS'));
   },
 }));
+
+// Reads JSON and form data from incoming requests.
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Simple route used to confirm the backend is live.
 app.get("/", (req, res) => {
   res.send("CASHLY Backend API is running");
 });
 
+// Simple API test route used during deployment checks.
 app.get("/api/test", (req, res) => {
   res.json({ message: "CASHLY API is running" });
 });
 
-// Routes
+// Connects backend routes to their API paths.
 app.use('/api/test', testRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
@@ -67,6 +72,7 @@ app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/ocr', ocrRoutes);
 
 // Global Error Handler Middleware
+// Catches unexpected errors and sends a clean JSON response.
 app.use((err, req, res, next) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   res.status(statusCode);
@@ -76,6 +82,7 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Starts the Express server on Render's PORT or local port 5000.
 app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });

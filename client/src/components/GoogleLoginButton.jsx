@@ -41,10 +41,10 @@ const GoogleLoginButton = ({ setError, setIsLoading, disabled = false }) => {
         style={{
           borderRadius: '16px',
           border: '1.5px solid #d1fae5',
-          color: 'var(--text-muted)',
-          background: 'var(--bg-subtle)',
+          color: '#12343B',
+          background: '#f8fffe',
           cursor: 'not-allowed',
-          opacity: 0.72
+          opacity: 0.82
         }}
       >
         Continue with Google

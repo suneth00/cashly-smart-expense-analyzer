@@ -2,14 +2,14 @@ const Expense = require('../models/Expense');
 
 const priorityRank = { high: 3, medium: 2, low: 1 };
 
-
-
 const formatPercent = (value) => `${Math.round(value)}%`;
 
+// Adds one Smart Advice item to the response list.
 const addAdvice = (recommendations, title, message, action, priority, category) => {
   recommendations.push({ title, message, action, priority, category });
 };
 
+// Suggests a small realistic cutback amount based on spending size.
 const getReductionAmount = (amount, ratio = 0.18) => {
   if (amount <= 0) return 0;
 
@@ -18,6 +18,7 @@ const getReductionAmount = (amount, ratio = 0.18) => {
   return Math.min(amount, Math.ceil(target / step) * step);
 };
 
+// Gives helpful starter advice when the user has no expense history yet.
 const buildBeginnerAdvice = (income, savingsGoal, formatCurrency) => {
   const recommendations = [];
 
@@ -59,6 +60,7 @@ const buildBeginnerAdvice = (income, savingsGoal, formatCurrency) => {
   return recommendations;
 };
 
+// Ensures the user always receives enough advice cards to display.
 const fillAdvice = (recommendations, context, formatCurrency) => {
   const {
     income,
@@ -131,6 +133,7 @@ const fillAdvice = (recommendations, context, formatCurrency) => {
 // @access  Private
 const getRecommendations = async (req, res) => {
   try {
+    // Uses profile values and current-month expenses to generate advice.
     const userId = req.user._id;
     const income = Number(req.user.monthlyIncome) || 0;
     const savingsGoal = Number(req.user.savingsGoal) || 0;
@@ -148,6 +151,7 @@ const getRecommendations = async (req, res) => {
     const currentDate = new Date();
     const startOfCurrentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 
+    // Loads total history count and this month's expenses together.
     const [allExpenseCount, expenses] = await Promise.all([
       Expense.countDocuments({ user: userId }),
       Expense.find({
@@ -197,6 +201,7 @@ const getRecommendations = async (req, res) => {
       return res.status(200).json(recommendations);
     }
 
+    // Builds category totals so advice can target the biggest spending areas.
     const totalSpending = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     const categoryTotals = expenses.reduce((totals, exp) => {
       totals[exp.category] = (totals[exp.category] || 0) + exp.amount;
@@ -227,6 +232,7 @@ const getRecommendations = async (req, res) => {
       );
     }
 
+    // Rule-based advice: high income usage becomes high-priority budget advice.
     if (income > 0 && incomeUsagePercent > 80) {
       addAdvice(
         recommendations,
@@ -339,6 +345,7 @@ const getRecommendations = async (req, res) => {
       categoryTotals,
     }, formatCurrency);
 
+    // Sends the most important advice first and limits the list for the UI.
     const sortedRecommendations = recommendations
       .sort((a, b) => priorityRank[b.priority] - priorityRank[a.priority])
       .slice(0, 5);

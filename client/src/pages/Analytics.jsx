@@ -21,6 +21,7 @@ const Analytics = () => {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
+        // Fetches analytics data used by quick stats and category charts.
         const res = await axios.get('/analytics/summary');
         setSummary(res.data);
       } catch {
@@ -33,6 +34,7 @@ const Analytics = () => {
   }, []);
 
   /* ── Quick-stat tiles derived from summary ── */
+  // These values summarize spending, remaining budget, and savings progress.
   const totalExpenses  = summary?.totalExpenses   || 0;
   const monthlySpend   = summary?.monthlySpending  || 0;
   const income         = user?.monthlyIncome       || 0;
@@ -200,6 +202,7 @@ const Analytics = () => {
           display: 'grid', gridTemplateColumns: '1fr 2fr',
           gap: '20px', marginBottom: '24px',
         }}>
+          {/* Money Health Score and Smart Advice are fetched in these cards. */}
           <MoneyHealthCard />
           <RecommendationsCard />
         </div>

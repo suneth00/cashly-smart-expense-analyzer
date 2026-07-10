@@ -6,6 +6,7 @@ const Expense = require('../models/Expense');
 // @access  Private
 const getExpenses = async (req, res) => {
   try {
+    // Returns only expenses owned by the logged-in user.
     const expenses = await Expense.find({ user: req.user._id }).sort({ date: -1 });
     res.status(200).json(expenses);
   } catch (error) {
@@ -18,6 +19,7 @@ const getExpenses = async (req, res) => {
 // @access  Private
 const getExpense = async (req, res) => {
   try {
+    // Rejects invalid MongoDB IDs before querying the database.
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: 'Invalid expense ID' });
     }
@@ -28,7 +30,7 @@ const getExpense = async (req, res) => {
       return res.status(404).json({ message: 'Expense not found' });
     }
 
-    // Make sure the logged in user matches the expense user
+    // Makes sure users can only view their own expenses.
     if (expense.user.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'User not authorized' });
     }
@@ -54,6 +56,7 @@ const createExpense = async (req, res) => {
       return res.status(400).json({ message: 'Amount must be a number' });
     }
 
+    // Saves the new expense under the logged-in user's ID.
     const expense = await Expense.create({
       user: req.user._id,
       title,
@@ -75,6 +78,7 @@ const createExpense = async (req, res) => {
 // @access  Private
 const updateExpense = async (req, res) => {
   try {
+    // Checks the ID and amount before attempting the update.
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: 'Invalid expense ID' });
     }
@@ -89,7 +93,7 @@ const updateExpense = async (req, res) => {
       return res.status(404).json({ message: 'Expense not found' });
     }
 
-    // Make sure the logged in user matches the expense user
+    // Makes sure users can only update their own expenses.
     if (expense.user.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'User not authorized' });
     }
@@ -111,6 +115,7 @@ const updateExpense = async (req, res) => {
 // @access  Private
 const deleteExpense = async (req, res) => {
   try {
+    // Finds the expense first so ownership can be checked before deleting.
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: 'Invalid expense ID' });
     }
@@ -121,7 +126,7 @@ const deleteExpense = async (req, res) => {
       return res.status(404).json({ message: 'Expense not found' });
     }
 
-    // Make sure the logged in user matches the expense user
+    // Makes sure users can only delete their own expenses.
     if (expense.user.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'User not authorized' });
     }
