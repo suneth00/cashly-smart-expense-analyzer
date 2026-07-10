@@ -1,7 +1,5 @@
-import React from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { CheckCircle, XCircle, Sparkles, Zap, Crown } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 /* ── Feature lists ── */
 const basicFeatures = [

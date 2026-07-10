@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from '../api/axios';
-import { Lightbulb, ArrowRight, Sparkles, CheckCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 /* ── Category → emoji ── */

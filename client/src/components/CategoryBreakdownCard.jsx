@@ -11,7 +11,6 @@ import { Tag, TrendingUp } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';
-import { formatCurrency as globalFormatCurrency } from '../utils/currencyUtils';
 
 const CATEGORY_COLORS = {
   food: '#84cc16',

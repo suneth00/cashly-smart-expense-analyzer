@@ -1,4 +1,4 @@
-import React, { useContext, useRef, useState, useEffect } from 'react';
+import { useCallback, useContext, useRef, useState, useEffect } from 'react';
 import { Search, Menu, Sun, Moon, X } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -13,18 +13,19 @@ const Navbar = ({ toggleMenu }) => {
   const navigate  = useNavigate();
   const location  = useLocation();
   const inputRef  = useRef(null);
-  const [localVal, setLocalVal] = useState('');
+  const [draftSearch, setDraftSearch] = useState('');
   const [focused,  setFocused]  = useState(false);
+  const isOnExpenses = location.pathname === '/expenses';
+  const searchValue = isOnExpenses ? query : draftSearch;
 
-  /* Sync localVal ← global query when navigating to /expenses externally */
-  useEffect(() => {
-    if (location.pathname === '/expenses') {
-      setLocalVal(query);
+  const handleClear = useCallback(() => {
+    if (isOnExpenses) {
+      clearSearch();
     } else {
-      // Clear local input when leaving expenses page
-      setLocalVal('');
+      setDraftSearch('');
     }
-  }, [location.pathname]); // eslint-disable-line
+    inputRef.current?.focus();
+  }, [clearSearch, isOnExpenses]);
 
   /* Keyboard shortcut: Ctrl/Cmd + K → focus search */
   useEffect(() => {
@@ -40,33 +41,30 @@ const Navbar = ({ toggleMenu }) => {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [focused]);
+  }, [focused, handleClear]);
 
   const handleChange = (e) => {
     const val = e.target.value;
-    setLocalVal(val);
-    setQuery(val);                     // update global instantly
-    if (val && location.pathname !== '/expenses') {
+    if (isOnExpenses) {
+      setQuery(val);                   // update global instantly
+    } else {
+      setDraftSearch(val);
+    }
+    if (val && !isOnExpenses) {
+      setQuery(val);
+      setDraftSearch('');
       navigate('/expenses');           // jump to expenses page on first keystroke
     }
   };
 
-  const handleClear = () => {
-    setLocalVal('');
-    clearSearch();
-    inputRef.current?.focus();
-  };
-
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
-      if (localVal.trim()) {
+      if (searchValue.trim()) {
         navigate('/expenses');
       }
       inputRef.current?.blur();
     }
   };
-
-  const isOnExpenses = location.pathname === '/expenses';
 
   return (
     <header
@@ -94,7 +92,7 @@ const Navbar = ({ toggleMenu }) => {
         {/* ── Search Bar ── */}
         <div
           className="relative hidden lg:flex items-center"
-          style={{ width: focused || localVal ? '340px' : '280px', transition: 'width 0.25s ease' }}
+          style={{ width: focused || searchValue ? '340px' : '280px', transition: 'width 0.25s ease' }}
         >
           {/* Search icon */}
           <Search
@@ -113,7 +111,7 @@ const Navbar = ({ toggleMenu }) => {
             id="global-search-input"
             type="text"
             placeholder="Search transactions…"
-            value={localVal}
+            value={searchValue}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onFocus={() => setFocused(true)}
@@ -121,7 +119,7 @@ const Navbar = ({ toggleMenu }) => {
             style={{
               width: '100%',
               paddingLeft:  '42px',
-              paddingRight: localVal ? '36px' : '40px',
+              paddingRight: searchValue ? '36px' : '40px',
               paddingTop:   '9px',
               paddingBottom:'9px',
               borderRadius: '12px',
@@ -138,7 +136,7 @@ const Navbar = ({ toggleMenu }) => {
           />
 
           {/* Clear button */}
-          {localVal && (
+          {searchValue && (
             <button
               onMouseDown={(e) => { e.preventDefault(); handleClear(); }}
               style={{
@@ -159,7 +157,7 @@ const Navbar = ({ toggleMenu }) => {
           )}
 
           {/* Kbd shortcut hint (shown when empty + not focused) */}
-          {!localVal && !focused && (
+          {!searchValue && !focused && (
             <span style={{
               position: 'absolute', right: '12px',
               fontSize: '10px', fontWeight: 700,
@@ -176,7 +174,7 @@ const Navbar = ({ toggleMenu }) => {
           )}
 
           {/* "Press Enter" hint when typing and not on /expenses */}
-          {localVal && !isOnExpenses && focused && (
+          {searchValue && !isOnExpenses && focused && (
             <span style={{
               position: 'absolute', right: '36px',
               fontSize: '10px', fontWeight: 700,

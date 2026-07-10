@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from '../api/axios';
-import { Activity, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Activity, CheckCircle, AlertTriangle } from 'lucide-react';
 
 /* ── Status config ── */
 const STATUS_CONFIG = {
@@ -43,13 +43,6 @@ const MoneyHealthCard = () => {
 
   const cfg   = STATUS_CONFIG[data.status] || DEFAULT_CONFIG;
   const score = Math.min(100, Math.max(0, data.score || 0));
-
-  /* Score bar zones */
-  const zones = [
-    { pct: 40, color: '#ef4444', label: 'Risky' },
-    { pct: 30, color: '#f59e0b', label: 'Fair' },
-    { pct: 30, color: '#22c55e', label: 'Great' },
-  ];
 
   return (
     <>

@@ -12,16 +12,10 @@ const Expenses = () => {
   const { query, setQuery, clearSearch } = useSearch();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
-  // local search mirrors the global query from Navbar
-  const [search, setSearch] = useState(query || '');
+  const search = query || '';
   const [category, setCategory] = useState('');
   const [sort, setSort] = useState('newest');
   const [editingExpense, setEditingExpense] = useState(null);
-
-  // Keep local search in sync whenever Navbar updates the global query
-  useEffect(() => {
-    setSearch(query || '');
-  }, [query]);
 
   const fetchExpenses = async () => {
     setLoading(true);
@@ -74,13 +68,11 @@ const Expenses = () => {
   const handleEditSuccess = () => { setEditingExpense(null); fetchExpenses(); };
 
   const handleSearchChange = (val) => {
-    setSearch(val);
     setQuery(val); // keep Navbar bar in sync too
   };
 
   const handleClearSearch = () => {
     clearSearch();
-    setSearch('');
   };
 
   // Applies search, category filter, and sorting before rendering the table.

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useContext, useCallback } from 'react';
+import { useEffect, useRef, useState, useContext, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import axios from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
@@ -357,18 +357,23 @@ const NotificationPanel = () => {
     try { return JSON.parse(localStorage.getItem('cashly_dismissed_notifs') || '[]'); }
     catch { return []; }
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!user) return;
+
     const load = async () => {
+      setLoading(true);
       try {
         const res = await axios.get('/analytics/summary');
         setNotifications(buildNotifications(res.data, user));
-      } catch { }
+      } catch {
+        setNotifications([]);
+      }
       finally { setLoading(false); }
     };
-    if (user) load();
-    else setLoading(false);
+
+    load();
   }, [user]);
 
   const visible = notifications.filter((n) => !dismissed.includes(n.id));

@@ -1,5 +1,3 @@
-import React from 'react';
-
 const StatCard = ({ title, amount, icon, subtitle, trend, trendUp, accentColor }) => {
   // accentColor is a hex like '#0d9488'
   const bg = accentColor ? `${accentColor}14` : '#f0fdf4';
